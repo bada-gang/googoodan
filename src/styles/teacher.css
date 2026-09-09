@@ -1,0 +1,26 @@
+/**
+ * 선생님 화면 전용 스타일.
+ * 게임 토큰(색·글꼴)은 그대로 쓰되, 게임용 body 규칙은 되돌린다 —
+ * 여기는 표를 스크롤하고 숫자를 긁어 복사하는 화면이다.
+ */
+@import './index.css';
+
+html,
+body,
+#root {
+  height: auto;
+  min-height: 100%;
+}
+
+body {
+  overflow: auto;
+  overscroll-behavior: auto;
+  background: var(--color-sky-soft);
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* 표 안의 숫자는 자리를 맞춰야 눈으로 비교된다 */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}

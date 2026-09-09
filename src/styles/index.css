@@ -1,0 +1,242 @@
+@import 'tailwindcss';
+
+/**
+ * 게임 UI 토큰. artTokens.ts 의 팔레트와 같은 값을 사용한다. (명세 40, 53)
+ * 웹사이트가 아니라 게임 HUD 처럼 보이게 하는 것이 목표다.
+ */
+@theme {
+  --font-game: 'Jua', 'Noto Sans KR', 'Malgun Gothic', sans-serif;
+  --font-body: 'Noto Sans KR', 'Malgun Gothic', sans-serif;
+
+  --color-ink: #4a3a2f;
+  --color-ink-soft: #6a5445;
+  --color-cream: #fff6e2;
+  --color-cream-dark: #f0e0c4;
+  --color-wood: #c08a52;
+  --color-wood-dark: #9a6a3c;
+  --color-wood-light: #d8a973;
+  --color-gold: #f6c453;
+  --color-gold-dark: #dba63a;
+  --color-leaf: #6fbf6a;
+  --color-leaf-dark: #529c50;
+  --color-sky: #bfe6f5;
+  --color-sky-soft: #e8f6fb;
+  --color-berry: #e8524a;
+  --color-blossom: #f6a8bd;
+  --color-mint: #8fd8c4;
+  --color-lavender: #b8a0e0;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-body);
+  color: var(--color-ink);
+  background: #2f3a33;
+  overscroll-behavior: none;
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: manipulation;
+}
+
+button {
+  font-family: var(--font-game);
+  touch-action: manipulation;
+}
+
+/* ------------------------------ 게임 UI 부품 ------------------------------ */
+
+@layer components {
+  /** 나무 간판 느낌의 패널 (명세 53) */
+  .panel-wood {
+    background: linear-gradient(180deg, var(--color-cream) 0%, var(--color-cream-dark) 100%);
+    border: 5px solid var(--color-ink);
+    border-radius: 26px;
+    box-shadow:
+      inset 0 4px 0 rgba(255, 255, 255, 0.75),
+      inset 0 -6px 0 rgba(154, 106, 60, 0.18),
+      0 10px 0 rgba(74, 58, 47, 0.22);
+  }
+
+  /** 종이 메모 느낌 */
+  .panel-paper {
+    background: #fffaf0;
+    border: 4px solid var(--color-ink);
+    border-radius: 20px;
+    box-shadow: 0 8px 0 rgba(74, 58, 47, 0.18);
+  }
+
+  /** 게임 버튼: 두껍고 둥글고 눌리는 느낌 */
+  .btn-game {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 56px;
+    padding: 0.6rem 1.4rem;
+    border: 4px solid var(--color-ink);
+    border-radius: 20px;
+    font-size: 1.35rem;
+    line-height: 1.2;
+    color: var(--color-ink);
+    background: linear-gradient(180deg, #ffffff 0%, var(--color-cream-dark) 100%);
+    box-shadow: 0 6px 0 rgba(74, 58, 47, 0.35);
+    transition:
+      transform 90ms ease,
+      box-shadow 90ms ease,
+      filter 120ms ease;
+  }
+
+  .btn-game:active:not(:disabled) {
+    transform: translateY(5px);
+    box-shadow: 0 1px 0 rgba(74, 58, 47, 0.35);
+  }
+
+  .btn-game:disabled {
+    filter: grayscale(0.55) brightness(0.97);
+    opacity: 0.7;
+  }
+
+  .btn-gold {
+    background: linear-gradient(180deg, #ffe08a 0%, var(--color-gold) 100%);
+  }
+
+  .btn-leaf {
+    background: linear-gradient(180deg, #a5dd9c 0%, var(--color-leaf) 100%);
+    color: #2f4a2c;
+  }
+
+  .btn-sky {
+    background: linear-gradient(180deg, #d5eefb 0%, #92cae8 100%);
+  }
+
+  .btn-berry {
+    background: linear-gradient(180deg, #ffb3ac 0%, #ef8078 100%);
+  }
+
+  /** HUD 위쪽의 작은 알약형 정보 */
+  .hud-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0.35rem 1rem 0.35rem 0.5rem;
+    border: 4px solid var(--color-ink);
+    border-radius: 999px;
+    background: linear-gradient(180deg, #fffdf6 0%, var(--color-cream-dark) 100%);
+    box-shadow: 0 5px 0 rgba(74, 58, 47, 0.28);
+    font-family: var(--font-game);
+    font-size: 1.3rem;
+    white-space: nowrap;
+  }
+}
+
+@layer utilities {
+  .text-game {
+    font-family: var(--font-game);
+  }
+
+  .stroke-ink {
+    -webkit-text-stroke: 0px;
+    text-shadow:
+      2px 2px 0 rgba(74, 58, 47, 0.18),
+      0 2px 0 rgba(255, 255, 255, 0.55);
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+}
+
+/* ------------------------------- 애니메이션 ------------------------------- */
+
+@keyframes pop-in {
+  0% {
+    transform: scale(0.86) translateY(14px);
+    opacity: 0;
+  }
+  70% {
+    transform: scale(1.03) translateY(0);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes shake-soft {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-7px);
+  }
+  40% {
+    transform: translateX(6px);
+  }
+  60% {
+    transform: translateX(-4px);
+  }
+  80% {
+    transform: translateX(3px);
+  }
+}
+
+@keyframes rise-fade {
+  0% {
+    transform: translateY(16px);
+    opacity: 0;
+  }
+  15% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-10px);
+    opacity: 0;
+  }
+}
+
+@keyframes glow-pulse {
+  0%,
+  100% {
+    box-shadow: 0 6px 0 rgba(74, 58, 47, 0.35);
+  }
+  50% {
+    box-shadow:
+      0 6px 0 rgba(74, 58, 47, 0.35),
+      0 0 22px 6px rgba(246, 196, 83, 0.75);
+  }
+}
+
+.animate-pop-in {
+  animation: pop-in 260ms cubic-bezier(0.34, 1.4, 0.64, 1) both;
+}
+
+.animate-shake-soft {
+  animation: shake-soft 420ms ease-in-out;
+}
+
+.animate-rise-fade {
+  animation: rise-fade 2400ms ease-out forwards;
+}
+
+.animate-glow {
+  animation: glow-pulse 1600ms ease-in-out infinite;
+}

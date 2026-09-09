@@ -1,0 +1,21 @@
+# Netlify 배포 설정
+#
+# 진입점이 둘이라(index.html = 학생, teacher.html = 선생님) 빌드 결과에 두 파일이 함께 생긴다.
+# 둘 다 정적 파일이라 SPA 라우팅 설정은 필요 없고, 주소만 짧게 이어 둔다.
+#
+# ⚠ VITE_ 환경변수는 빌드할 때 번들에 박힌다.
+#   Netlify 사이트 설정 → Environment variables 에 넣어 두어야 빌드가 값을 읽는다.
+#   (.env.local 은 git 에 올라가지 않으므로 Netlify 는 그 파일을 못 본다)
+
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# /teacher 로 들어가도 선생님 화면이 열리게 한다 (주소는 그대로 유지)
+[[redirects]]
+  from = "/teacher"
+  to = "/teacher.html"
+  status = 200

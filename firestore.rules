@@ -1,0 +1,40 @@
+rules_version = '2';
+
+// 구구 마을 — 한 학급이 하나의 프로젝트를 함께 쓴다.
+//
+// 학생은 계정을 만들지 않는다. 대신 앱이 자동으로 익명 로그인을 하고,
+// 규칙은 "로그인한 기기인지"만 확인한다.
+// 이렇게 하면 학생 경험은 그대로면서, 주소만 아는 외부인의 접근은 막힌다.
+//
+// 적용:  firebase deploy --only firestore:rules
+// 또는 Firebase 콘솔 → Firestore Database → 규칙 에 붙여 넣기
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 로그인한 기기인가
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    // 학생 이름 · 캐릭터
+    match /players/{playerId} {
+      allow read, write: if signedIn();
+    }
+
+    // 게임 진행도
+    match /saves/{playerId} {
+      allow read, write: if signedIn();
+    }
+
+    // 학습 통계
+    match /stats/{playerId} {
+      allow read, write: if signedIn();
+    }
+
+    // 그 밖의 경로는 모두 막는다
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

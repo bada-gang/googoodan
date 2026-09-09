@@ -1,0 +1,4 @@
+{
+  "_comment": "실제 아트가 준비된 에셋 키를 ready 배열에 넣으면 placeholder 대신 파일에서 로드합니다. 키/경로는 src/config/assets.ts 의 ASSET_MANIFEST 를 참고하세요.",
+  "ready": []
+}
