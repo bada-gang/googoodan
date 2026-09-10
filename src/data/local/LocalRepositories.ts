@@ -2,7 +2,7 @@
  * localStorage 기반 저장소 구현. Phase 1~7 동안의 기본 구현이며,
  * Phase 8 에서 Firebase 구현으로 교체된다. (명세 72, 74)
  */
-import type { AvatarId, GameSaveData, PlayerProfile } from '@/types/game';
+import type { AvatarId, CharacterId, GameSaveData, PlayerProfile } from '@/types/game';
 import type { LearningStats } from '@/types/learning';
 import type {
   GameStateRepository,
@@ -28,13 +28,18 @@ export class LocalPlayerRepository implements PlayerRepository {
     return profiles.find((p) => p.id === playerId) ?? null;
   }
 
-  async createProfile(displayName: string, avatarId: AvatarId): Promise<PlayerProfile> {
+  async createProfile(
+    displayName: string,
+    avatarId: AvatarId,
+    characterId: CharacterId = 'boy',
+  ): Promise<PlayerProfile> {
     const profiles = readJson<PlayerProfile[]>(KEYS.profiles, []);
     const now = new Date().toISOString();
     const profile: PlayerProfile = {
       id: newId('player'),
       displayName: displayName.trim(),
       avatarId,
+      characterId,
       createdAt: now,
       lastPlayedAt: null,
     };
@@ -43,11 +48,15 @@ export class LocalPlayerRepository implements PlayerRepository {
     return profile;
   }
 
-  async updateAvatar(playerId: string, avatarId: AvatarId): Promise<void> {
+  async updateLook(
+    playerId: string,
+    look: { avatarId?: AvatarId; characterId?: CharacterId },
+  ): Promise<void> {
     const profiles = readJson<PlayerProfile[]>(KEYS.profiles, []);
     const target = profiles.find((p) => p.id === playerId);
     if (!target) return;
-    target.avatarId = avatarId;
+    if (look.avatarId) target.avatarId = look.avatarId;
+    if (look.characterId) target.characterId = look.characterId;
     writeJson(KEYS.profiles, profiles);
   }
 

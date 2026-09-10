@@ -654,13 +654,56 @@ export function buildRoomWall(pattern: 'plain' | 'star' = 'plain'): Sheet {
   return sheet;
 }
 
-export function buildRoomFloor(): Sheet {
-  const sheet = makeSheet(256, 128, 1);
+/**
+ * 방 바닥 타일. 흰 바탕에 검정/흰색 반투명만 얹는다 —
+ * Phaser 가 색을 tint 로 입히므로 여기서 색을 칠하면 두 번 곱해져 탁해진다.
+ *
+ * 세 바닥이 이름값을 하려면 무늬가 서로 달라야 한다.
+ * 색만 바꾸면 "체크 바닥"도 "융단 바닥"도 나무 판자 무늬로 나온다.
+ */
+/**
+ * 타일 높이. 화면에 보이는 바닥(GAME_HEIGHT - GROUND_Y = 140px)보다 커야 한다.
+ * 작으면 세로로 한 번 더 이어 붙으면서 윗변 굽도리가 바닥 한가운데에 다시 그어진다.
+ */
+const FLOOR_TILE_H = 160;
+
+export function buildRoomFloor(pattern: 'plank' | 'check' | 'carpet' = 'plank'): Sheet {
+  const h = FLOOR_TILE_H;
+  const sheet = makeSheet(256, h, 1);
   frame(sheet, 0, (ctx) => {
     ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, 256, 128);
-    ctx.fillStyle = 'rgba(0,0,0,0.09)';
-    for (let x = 0; x < 256; x += 52) ctx.fillRect(x, 0, 4, 128);
+    ctx.fillRect(0, 0, 256, h);
+
+    if (pattern === 'check') {
+      // 가로로는 계속 이어 붙으므로 256 이 칸 크기의 배수여야 체크가 어긋나지 않는다.
+      const cell = 64;
+      ctx.fillStyle = 'rgba(0,0,0,0.13)';
+      for (let gy = 0; gy * cell < h; gy += 1) {
+        for (let gx = 0; gx < 256 / cell; gx += 1) {
+          if ((gx + gy) % 2 === 1) ctx.fillRect(gx * cell, gy * cell, cell, cell);
+        }
+      }
+      // 칸 사이 줄눈
+      ctx.fillStyle = 'rgba(0,0,0,0.07)';
+      for (let x = 0; x <= 256; x += cell) ctx.fillRect(x - 1, 0, 2, h);
+      for (let y = 0; y <= h; y += cell) ctx.fillRect(0, y - 1, 256, 2);
+    } else if (pattern === 'carpet') {
+      // 촘촘한 씨실·날실. 8px 격자에서 가로실과 세로실을 엇갈리게 놓으면 융단 결처럼 보인다.
+      for (let y = 0; y < h; y += 8) {
+        for (let x = 0; x < 256; x += 8) {
+          const weft = (x / 8 + y / 8) % 2 === 0;
+          ctx.fillStyle = weft ? 'rgba(0,0,0,0.07)' : 'rgba(255,255,255,0.45)';
+          if (weft) ctx.fillRect(x + 1, y + 2, 6, 4);
+          else ctx.fillRect(x + 2, y + 1, 4, 6);
+        }
+      }
+    } else {
+      // 나무 판자
+      ctx.fillStyle = 'rgba(0,0,0,0.09)';
+      for (let x = 0; x < 256; x += 52) ctx.fillRect(x, 0, 4, h);
+    }
+
+    // 벽과 만나는 윗변 — 세 무늬 모두 같은 자리에 그림자와 굽도리를 둔다
     ctx.fillStyle = 'rgba(0,0,0,0.05)';
     ctx.fillRect(0, 0, 256, 5);
     ctx.fillStyle = 'rgba(255,255,255,0.5)';

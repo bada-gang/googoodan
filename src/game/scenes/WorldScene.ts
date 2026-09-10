@@ -21,6 +21,7 @@ import type {
 import { useGameStore } from '@/state/gameStore';
 import type { MathContext } from '@/types/learning';
 import type { PlacementArea } from '@/types/game';
+import { characterOf } from '@/types/game';
 import { audio } from '@/audio/sfx';
 import { Player } from '../objects/Player';
 import { GAME_FONT, burstStars, createMarker, sparkleAt } from '../objects/effects';
@@ -90,7 +91,12 @@ export abstract class WorldScene extends Phaser.Scene {
     this.cameras.main.setBackgroundColor(PALETTE.skyBottom);
     this.buildWorld();
 
-    this.player = new Player(this, this.spawnX ?? this.defaultSpawnX, PLAYER_FOOT_Y);
+    this.player = new Player(
+      this,
+      this.spawnX ?? this.defaultSpawnX,
+      PLAYER_FOOT_Y,
+      characterOf(useGameStore.getState().profile),
+    );
     this.player.setDepth(40);
 
     this.cameras.main.setBounds(0, 0, this.worldWidth, GAME_HEIGHT);

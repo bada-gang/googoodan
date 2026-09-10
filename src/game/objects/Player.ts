@@ -4,6 +4,7 @@
  */
 import Phaser from 'phaser';
 import { ASSETS } from '@/config/assets';
+import type { CharacterId } from '@/types/game';
 import { ANIM } from '../anims';
 
 /** 초당 이동 픽셀 (논리 해상도 1280×800 기준) */
@@ -16,11 +17,17 @@ export class Player extends Phaser.GameObjects.Sprite {
   /** 장면별 이동 속도 배수. 기본은 마을과 같은 속도. */
   private speedScale = 1;
 
-  constructor(scene: Phaser.Scene, x: number, y: number) {
-    super(scene, x, y, ASSETS.player.idle, 0);
+  /** 프로필에서 고른 캐릭터. 텍스처와 애니메이션 키가 여기서 갈린다. */
+  private readonly art: (typeof ASSETS.characters)[CharacterId];
+  private readonly character: CharacterId;
+
+  constructor(scene: Phaser.Scene, x: number, y: number, character: CharacterId = 'boy') {
+    super(scene, x, y, ASSETS.characters[character].idle, 0);
+    this.character = character;
+    this.art = ASSETS.characters[character];
     scene.add.existing(this);
     this.setOrigin(0.5, 1);
-    this.play(ANIM.playerIdle);
+    this.play(ANIM.player(character, 'idle'));
   }
 
   setMoveDirection(dir: number): void {
@@ -42,14 +49,14 @@ export class Player extends Phaser.GameObjects.Sprite {
   /** 상호작용 동작. 잠깐 이동을 막고 애니메이션을 재생한다. */
   playInteract(): void {
     this.busyUntil = this.scene.time.now + 380;
-    this.setTexture(ASSETS.player.interact);
-    this.play(ANIM.playerInteract, true);
+    this.setTexture(this.art.interact);
+    this.play(ANIM.player(this.character, 'interact'), true);
   }
 
   playHappy(): void {
     this.busyUntil = this.scene.time.now + 520;
-    this.setTexture(ASSETS.player.happy);
-    this.play(ANIM.playerHappy, true);
+    this.setTexture(this.art.happy);
+    this.play(ANIM.player(this.character, 'happy'), true);
   }
 
   get isBusy(): boolean {
@@ -70,13 +77,13 @@ export class Player extends Phaser.GameObjects.Sprite {
         minX,
         maxX,
       );
-      if (this.anims.getName() !== ANIM.playerWalk) {
-        this.setTexture(ASSETS.player.walk);
-        this.play(ANIM.playerWalk, true);
+      if (this.anims.getName() !== ANIM.player(this.character, 'walk')) {
+        this.setTexture(this.art.walk);
+        this.play(ANIM.player(this.character, 'walk'), true);
       }
-    } else if (this.anims.getName() !== ANIM.playerIdle) {
-      this.setTexture(ASSETS.player.idle);
-      this.play(ANIM.playerIdle, true);
+    } else if (this.anims.getName() !== ANIM.player(this.character, 'idle')) {
+      this.setTexture(this.art.idle);
+      this.play(ANIM.player(this.character, 'idle'), true);
     }
   }
 }

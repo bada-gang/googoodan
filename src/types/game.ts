@@ -13,14 +13,27 @@ export type AvatarId =
   | 'bird'
   | 'frog';
 
+/** 게임 안에서 움직이는 내 캐릭터. 목록에서 고르는 아바타 아이콘과는 별개다. */
+export type CharacterId = 'boy' | 'girl' | 'pucca' | 'danbi' | 'dooly' | 'mario';
+
 export interface PlayerProfile {
   /** 내부 식별자. 이름을 DB 키로 쓰지 않는다. (명세 9) */
   id: string;
   displayName: string;
   avatarId: AvatarId;
+  /**
+   * 캐릭터가 하나뿐이던 시절에 만든 프로필에는 없다.
+   * 직접 읽지 말고 characterOf() 를 쓴다.
+   */
+  characterId?: CharacterId;
   createdAt: string;
   /** 아직 한 번도 게임에 들어가지 않았으면 null. 교사가 미리 만든 이름이 그렇다. (명세 10, 73) */
   lastPlayedAt: string | null;
+}
+
+/** 예전 프로필에는 characterId 가 없다. 그때는 남자 캐릭터 하나뿐이었다. */
+export function characterOf(profile: { characterId?: CharacterId } | null | undefined): CharacterId {
+  return profile?.characterId ?? 'boy';
 }
 
 /** 현재 접속 세션에만 적용되는 설정. 저장하지 않는다. (명세 12) */

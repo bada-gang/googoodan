@@ -9,6 +9,7 @@
  * 시작·결과 팝업은 React 가 그린다. 씬은 단계만 알린다. (명세 71)
  */
 import Phaser from 'phaser';
+import { characterOf } from '@/types/game';
 import { ASSETS } from '@/config/assets';
 import { PALETTE } from '@/config/artTokens';
 import { MINIGAME } from '@/config/balance';
@@ -72,7 +73,12 @@ export class FruitCatchScene extends Phaser.Scene {
       .tileSprite(0, GROUND_Y, GAME_WIDTH, GAME_HEIGHT - GROUND_Y + 40, ASSETS.environment.groundYard)
       .setOrigin(0);
 
-    this.player = new Player(this, GAME_WIDTH / 2, GROUND_Y + 22);
+    this.player = new Player(
+      this,
+      GAME_WIDTH / 2,
+      GROUND_Y + 22,
+      characterOf(useGameStore.getState().profile),
+    );
     this.player.setDepth(40);
     // 떨어지는 열매를 쫓아다녀야 하므로 이 장면에서만 조금 더 빠르게 움직인다
     this.player.setSpeedScale(MINIGAME.moveSpeedScale);

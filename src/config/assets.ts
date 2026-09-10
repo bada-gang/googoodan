@@ -7,14 +7,49 @@
  * placeholder 대신 실제 파일이 로드된다. (Phase 7 아트 패스)
  */
 import { FURNITURE } from './catalog';
-import type { AnimalSpeciesId, AvatarId, TreeSpeciesId, TreeStage } from '@/types/game';
+import type { AnimalSpeciesId, AvatarId, CharacterId, TreeSpeciesId, TreeStage } from '@/types/game';
+
+export const CHARACTER_IDS: CharacterId[] = ['boy', 'girl', 'pucca', 'danbi', 'dooly', 'mario'];
 
 export const ASSETS = {
-  player: {
-    idle: 'player_idle',
-    walk: 'player_walk',
-    interact: 'player_interact',
-    happy: 'player_happy',
+  /** 캐릭터별 스프라이트시트. 학생이 프로필을 만들 때 고른다. */
+  characters: {
+    boy: {
+      idle: 'player_boy_idle',
+      walk: 'player_boy_walk',
+      interact: 'player_boy_interact',
+      happy: 'player_boy_happy',
+    },
+    girl: {
+      idle: 'player_girl_idle',
+      walk: 'player_girl_walk',
+      interact: 'player_girl_interact',
+      happy: 'player_girl_happy',
+    },
+    pucca: {
+      idle: 'player_pucca_idle',
+      walk: 'player_pucca_walk',
+      interact: 'player_pucca_interact',
+      happy: 'player_pucca_happy',
+    },
+    danbi: {
+      idle: 'player_danbi_idle',
+      walk: 'player_danbi_walk',
+      interact: 'player_danbi_interact',
+      happy: 'player_danbi_happy',
+    },
+    dooly: {
+      idle: 'player_dooly_idle',
+      walk: 'player_dooly_walk',
+      interact: 'player_dooly_interact',
+      happy: 'player_dooly_happy',
+    },
+    mario: {
+      idle: 'player_mario_idle',
+      walk: 'player_mario_walk',
+      interact: 'player_mario_interact',
+      happy: 'player_mario_happy',
+    },
   },
   avatars: {
     rabbit: 'avatar_rabbit',
@@ -104,6 +139,8 @@ export const ASSETS = {
     roomWall: 'env_room_wall',
     roomWallStar: 'env_room_wall_star',
     roomFloor: 'env_room_floor',
+    roomFloorCheck: 'env_room_floor_check',
+    roomFloorCarpet: 'env_room_floor_carpet',
     roomWindow: 'env_room_window',
     roomDoor: 'env_room_door',
     fenceRail: 'env_fence_rail',
@@ -170,6 +207,23 @@ export function furnitureTextureKey(itemId: string): string {
   return `furniture_${itemId}`;
 }
 
+/**
+ * 벽지·바닥이 쓸 타일 텍스처 키.
+ *
+ * 무늬 없는 것은 흰 바탕 타일 하나를 색만 바꿔 쓰고,
+ * 이름이 무늬를 약속하는 것("별빛 벽지", "체크 바닥")은 그림 자체를 따로 쓴다.
+ * 방(HomeScene)과 상점 미리보기가 반드시 같은 키를 봐야 사고 나서 다르게 보이지 않는다.
+ */
+export function surfaceTextureKey(
+  surface: { pattern?: 'star' | 'check' | 'carpet' },
+  kind: 'wall' | 'floor',
+): string {
+  if (surface.pattern === 'star') return ASSETS.environment.roomWallStar;
+  if (surface.pattern === 'check') return ASSETS.environment.roomFloorCheck;
+  if (surface.pattern === 'carpet') return ASSETS.environment.roomFloorCarpet;
+  return kind === 'wall' ? ASSETS.environment.roomWall : ASSETS.environment.roomFloor;
+}
+
 /* --------------------------- 실제 아트 파일 매니페스트 -------------------------- */
 
 export type AssetType = 'image' | 'spritesheet' | 'audio';
@@ -211,10 +265,12 @@ const ANIMAL_SIZE: Record<AnimalSpeciesId, [number, number]> = {
  */
 export const ASSET_MANIFEST: AssetSpec[] = [
   // 캐릭터 (명세 42)
-  sheet(ASSETS.player.idle, 'characters/player_idle.png', 120, 160, 4),
-  sheet(ASSETS.player.walk, 'characters/player_walk.png', 120, 160, 6),
-  sheet(ASSETS.player.interact, 'characters/player_interact.png', 120, 160, 4),
-  sheet(ASSETS.player.happy, 'characters/player_happy.png', 120, 160, 4),
+  ...CHARACTER_IDS.flatMap((c) => [
+    sheet(ASSETS.characters[c].idle, 'characters/player_' + c + '_idle.png', 120, 160, 4),
+    sheet(ASSETS.characters[c].walk, 'characters/player_' + c + '_walk.png', 120, 160, 6),
+    sheet(ASSETS.characters[c].interact, 'characters/player_' + c + '_interact.png', 120, 160, 4),
+    sheet(ASSETS.characters[c].happy, 'characters/player_' + c + '_happy.png', 120, 160, 4),
+  ]),
   ...(Object.keys(ASSETS.avatars) as AvatarId[]).map((id) =>
     img(ASSETS.avatars[id], `characters/avatar_${id}.png`),
   ),

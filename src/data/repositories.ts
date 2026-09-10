@@ -9,15 +9,19 @@
  * (자동 저장, 명세 36) 하나의 GameStateRepository 애그리게이트로 다룬다.
  * Firestore 에서는 이 구현체 내부에서 하위 문서로 나눌 수 있다.
  */
-import type { AvatarId, GameSaveData, PlayerProfile } from '@/types/game';
+import type { AvatarId, CharacterId, GameSaveData, PlayerProfile } from '@/types/game';
 import type { LearningStats } from '@/types/learning';
 
 export interface PlayerRepository {
   listProfiles(): Promise<PlayerProfile[]>;
   getProfile(playerId: string): Promise<PlayerProfile | null>;
-  createProfile(displayName: string, avatarId: AvatarId): Promise<PlayerProfile>;
-  /** 학생이 시작 화면에서 자기 캐릭터를 바꾼다. (명세 9, 10) */
-  updateAvatar(playerId: string, avatarId: AvatarId): Promise<void>;
+  createProfile(
+    displayName: string,
+    avatarId: AvatarId,
+    characterId?: CharacterId,
+  ): Promise<PlayerProfile>;
+  /** 학생이 자기 모습을 바꾼다. 아바타와 캐릭터를 한 번에 다룬다. (명세 9, 10) */
+  updateLook(playerId: string, look: { avatarId?: AvatarId; characterId?: CharacterId }): Promise<void>;
   touchLastPlayed(playerId: string): Promise<void>;
   deleteProfile(playerId: string): Promise<void>;
 }

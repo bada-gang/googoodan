@@ -20,7 +20,7 @@ import {
   setDoc,
   updateDoc,
 } from 'firebase/firestore';
-import type { AvatarId, GameSaveData, PlayerProfile } from '@/types/game';
+import type { AvatarId, CharacterId, GameSaveData, PlayerProfile } from '@/types/game';
 import type { LearningStats } from '@/types/learning';
 import type {
   GameStateRepository,
@@ -53,12 +53,17 @@ export class FirebasePlayerRepository implements PlayerRepository {
     return { id: snapshot.id, ...snapshot.data() } as PlayerProfile;
   }
 
-  async createProfile(displayName: string, avatarId: AvatarId): Promise<PlayerProfile> {
+  async createProfile(
+    displayName: string,
+    avatarId: AvatarId,
+    characterId: CharacterId = 'boy',
+  ): Promise<PlayerProfile> {
     const now = new Date().toISOString();
     const profile: PlayerProfile = {
       id: newPlayerId(),
       displayName: displayName.trim(),
       avatarId,
+      characterId,
       createdAt: now,
       lastPlayedAt: null,
     };
@@ -67,8 +72,14 @@ export class FirebasePlayerRepository implements PlayerRepository {
     return profile;
   }
 
-  async updateAvatar(playerId: string, avatarId: AvatarId): Promise<void> {
-    await updateDoc(doc(firestore(), PLAYERS, playerId), { avatarId });
+  async updateLook(
+    playerId: string,
+    look: { avatarId?: AvatarId; characterId?: CharacterId },
+  ): Promise<void> {
+    // undefined 를 그대로 보내면 Firestore 가 거부한다. 채워진 것만 보낸다.
+    const patch = Object.fromEntries(Object.entries(look).filter(([, v]) => v !== undefined));
+    if (Object.keys(patch).length === 0) return;
+    await updateDoc(doc(firestore(), PLAYERS, playerId), patch);
   }
 
   async touchLastPlayed(playerId: string): Promise<void> {

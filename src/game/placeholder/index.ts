@@ -6,12 +6,13 @@
  *    어떤 키가 아직 임시인지 isPlaceholder() 로 확인할 수 있다.
  */
 import type Phaser from 'phaser';
-import { ASSETS, furnitureTextureKey } from '@/config/assets';
+import { ASSETS, CHARACTER_IDS, furnitureTextureKey } from '@/config/assets';
 import { FURNITURE } from '@/config/catalog';
 import { GAME_HEIGHT, GAME_WIDTH } from '@/config/layout';
 import { PALETTE } from '@/config/artTokens';
 import type { AnimalSpeciesId, AvatarId, TreeSpeciesId } from '@/types/game';
 import { cropFrame, type Sheet } from './draw';
+import type { CharacterId } from '@/types/game';
 import {
   buildAvatarSheet,
   buildPlayerHappySheet,
@@ -75,10 +76,14 @@ type Builder = () => Sheet;
 function builders(): Record<string, Builder> {
   const map: Record<string, Builder> = {
     // 캐릭터
-    [ASSETS.player.idle]: buildPlayerIdleSheet,
-    [ASSETS.player.walk]: buildPlayerWalkSheet,
-    [ASSETS.player.interact]: buildPlayerInteractSheet,
-    [ASSETS.player.happy]: buildPlayerHappySheet,
+    ...Object.fromEntries(
+      CHARACTER_IDS.flatMap((c) => [
+        [ASSETS.characters[c].idle, () => buildPlayerIdleSheet(c)],
+        [ASSETS.characters[c].walk, () => buildPlayerWalkSheet(c)],
+        [ASSETS.characters[c].interact, () => buildPlayerInteractSheet(c)],
+        [ASSETS.characters[c].happy, () => buildPlayerHappySheet(c)],
+      ]),
+    ),
 
     // 건물
     [ASSETS.buildings.house]: buildHouse,
@@ -105,7 +110,9 @@ function builders(): Record<string, Builder> {
     [ASSETS.environment.soilPlot]: buildSoilPlot,
     [ASSETS.environment.roomWall]: () => buildRoomWall('plain'),
     [ASSETS.environment.roomWallStar]: () => buildRoomWall('star'),
-    [ASSETS.environment.roomFloor]: buildRoomFloor,
+    [ASSETS.environment.roomFloor]: () => buildRoomFloor('plank'),
+    [ASSETS.environment.roomFloorCheck]: () => buildRoomFloor('check'),
+    [ASSETS.environment.roomFloorCarpet]: () => buildRoomFloor('carpet'),
     [ASSETS.environment.roomWindow]: buildRoomWindow,
     [ASSETS.environment.roomDoor]: buildRoomDoor,
     [ASSETS.environment.fenceRail]: buildFenceRail,
@@ -197,4 +204,9 @@ export function registerPlaceholderTextures(scene: Phaser.Scene, readyKeys: Set<
         'Phase 7 아트 패스에서 public/assets/ 의 실제 파일로 교체하세요.',
     );
   }
+}
+
+/** 캐릭터 고르기 화면에서 쓰는 한 프레임짜리 그림 */
+export function buildCharacterPreview(character: CharacterId): Sheet {
+  return cropFrame(buildPlayerIdleSheet(character), 0);
 }

@@ -7,13 +7,14 @@
  * 배치·이동·회전·회수에는 문제를 내지 않는다. 창작 활동을 끊지 않기 위해서다. (명세 29)
  */
 import { useEffect, useState } from 'react';
+import type { SurfaceDef } from '@/config/catalog';
 import { FLOORS, FURNITURE_BY_ID, WALLPAPERS } from '@/config/catalog';
 import { gameEvents } from '@/bridge/eventBus';
 import type { DecorateTool } from '@/bridge/events';
 import { useGameStore } from '@/state/gameStore';
 import { useUiStore } from '@/state/uiStore';
 import type { PlacementArea } from '@/types/game';
-import { furnitureIcon } from '../common/icons';
+import { furnitureIcon, surfaceIcon } from '../common/icons';
 import { EmptyNote, GameButton, Icon } from '../common/ui';
 import { audio } from '@/audio/sfx';
 
@@ -163,6 +164,7 @@ export function DecorateOverlay(): React.ReactElement {
             <div className="flex flex-col gap-3">
               <SurfaceRow
                 title="벽지"
+                kind="wall"
                 surfaces={WALLPAPERS}
                 currentId={home.wallpaperId}
                 isOwned={ownedSurface}
@@ -173,6 +175,7 @@ export function DecorateOverlay(): React.ReactElement {
               />
               <SurfaceRow
                 title="바닥"
+                kind="floor"
                 surfaces={FLOORS}
                 currentId={home.floorId}
                 isOwned={ownedSurface}
@@ -210,13 +213,15 @@ export function DecorateOverlay(): React.ReactElement {
 
 function SurfaceRow({
   title,
+  kind,
   surfaces,
   currentId,
   isOwned,
   onSelect,
 }: {
   title: string;
-  surfaces: { id: string; name: string; price: number; color: string; accent: string }[];
+  kind: 'wall' | 'floor';
+  surfaces: SurfaceDef[];
   currentId: string;
   isOwned: (id: string, price: number) => boolean;
   onSelect: (id: string) => void;
@@ -239,11 +244,11 @@ function SurfaceRow({
                 owned ? '' : 'opacity-45 grayscale',
               ].join(' ')}
             >
-              <span
-                className="block h-[46px] w-full rounded-lg border-[3px] border-ink"
-                style={{
-                  background: `repeating-linear-gradient(135deg, ${surface.color} 0 14px, ${surface.accent} 14px 28px)`,
-                }}
+              {/* 방에 깔릴 그림 그대로 보여 준다 */}
+              <img
+                src={surfaceIcon(surface, kind)}
+                alt=""
+                className="block h-[46px] w-full rounded-lg border-[3px] border-ink object-cover"
               />
               <span className="font-game text-[0.95rem]">{surface.name}</span>
               {!owned && <span className="font-game text-[0.85rem] text-ink-soft">가게에서 사기</span>}

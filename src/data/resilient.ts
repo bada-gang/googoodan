@@ -56,8 +56,9 @@ export function createResilientBundle(
   const player: PlayerRepository = {
     listProfiles: () => run((b) => b.player.listProfiles()),
     getProfile: (id) => run((b) => b.player.getProfile(id)),
-    createProfile: (name, avatar) => run((b) => b.player.createProfile(name, avatar)),
-    updateAvatar: (id, avatar) => run((b) => b.player.updateAvatar(id, avatar)),
+    createProfile: (name, avatar, character) =>
+      run((b) => b.player.createProfile(name, avatar, character)),
+    updateLook: (id, look) => run((b) => b.player.updateLook(id, look)),
     touchLastPlayed: (id) => run((b) => b.player.touchLastPlayed(id)),
     deleteProfile: (id) => run((b) => b.player.deleteProfile(id)),
   };

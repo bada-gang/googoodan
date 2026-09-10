@@ -7,8 +7,10 @@
  */
 import { useState } from 'react';
 import { repositories } from '@/data';
-import type { AvatarId, PlayerProfile } from '@/types/game';
+import type { AvatarId, CharacterId, PlayerProfile } from '@/types/game';
+import { characterOf } from '@/types/game';
 import { AvatarGrid } from '../common/AvatarGrid';
+import { CharacterPicker } from '../common/CharacterPicker';
 import { avatarIcon } from '../common/icons';
 import { GameButton, Icon } from '../common/ui';
 import { ScreenShell } from './ProfileSelectScreen';
@@ -20,17 +22,18 @@ export function TableSelectScreen({
   profile,
   onStart,
   onBack,
-  onAvatarChanged,
+  onLookChanged,
 }: {
   profile: PlayerProfile;
   onStart: (tables: number[]) => void;
   onBack: () => void;
-  /** 바뀐 캐릭터를 위(App)에도 알린다 — 게임 안 캐릭터와 저장 데이터가 같이 바뀌어야 한다. */
-  onAvatarChanged: (avatarId: AvatarId) => void;
+  /** 바뀐 모습을 위(App)에도 알린다 — 게임 안 캐릭터와 저장 데이터가 같이 바뀌어야 한다. */
+  onLookChanged: (look: { avatarId: AvatarId; characterId: CharacterId }) => void;
 }): React.ReactElement {
   const [selected, setSelected] = useState<number[]>([]);
   const [picking, setPicking] = useState(false);
   const [avatar, setAvatar] = useState<AvatarId>(profile.avatarId);
+  const [character, setCharacter] = useState<CharacterId>(characterOf(profile));
   const [busy, setBusy] = useState(false);
 
   const toggle = (table: number) => {
@@ -40,12 +43,12 @@ export function TableSelectScreen({
     );
   };
 
-  const saveAvatar = async () => {
+  const saveLook = async () => {
     if (busy) return;
     setBusy(true);
     try {
-      await repositories().player.updateAvatar(profile.id, avatar);
-      onAvatarChanged(avatar);
+      await repositories().player.updateLook(profile.id, { avatarId: avatar, characterId: character });
+      onLookChanged({ avatarId: avatar, characterId: character });
       setPicking(false);
     } catch (error) {
       console.error('[profile] 캐릭터를 바꾸지 못했습니다.', error);
@@ -57,19 +60,24 @@ export function TableSelectScreen({
   if (picking) {
     return (
       <ScreenShell title={`${profile.displayName}의 캐릭터를 골라 주세요`}>
-        <div className="flex flex-col items-center gap-6 pt-2">
+        <div className="flex flex-col items-center gap-4 pt-1">
+          <p className="font-game text-[1.15rem] text-ink-soft">마을에서 걸어 다닐 내 모습</p>
+          <CharacterPicker selected={character} onSelect={setCharacter} />
+
+          <p className="font-game text-[1.15rem] text-ink-soft">내 이름 옆에 붙일 그림</p>
           <AvatarGrid selected={avatar} onSelect={setAvatar} />
 
           <div className="flex gap-4">
             <GameButton
               onClick={() => {
                 setAvatar(profile.avatarId);
+                setCharacter(characterOf(profile));
                 setPicking(false);
               }}
             >
               돌아가기
             </GameButton>
-            <GameButton tone="leaf" big disabled={busy} onClick={() => void saveAvatar()}>
+            <GameButton tone="leaf" big disabled={busy} onClick={() => void saveLook()}>
               이걸로 할래요
             </GameButton>
           </div>
@@ -90,6 +98,7 @@ export function TableSelectScreen({
             onClick={() => {
               audio.play('tap');
               setAvatar(profile.avatarId);
+              setCharacter(characterOf(profile));
               setPicking(true);
             }}
           >

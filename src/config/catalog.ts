@@ -362,8 +362,11 @@ export interface SurfaceDef {
   unlockLevel: number;
   color: string;
   accent: string;
-  /** 색만으로 부족한 벽지는 무늬 타일을 따로 쓴다 */
-  pattern?: 'star';
+  /**
+   * 색만 바꾸면 이름이 약속한 무늬가 안 보인다("체크 바닥"이 나무 무늬로 나온다).
+   * 무늬가 있는 벽지·바닥은 타일 그림 자체를 따로 쓴다.
+   */
+  pattern?: 'star' | 'check' | 'carpet';
 }
 
 export const WALLPAPERS: SurfaceDef[] = [
@@ -375,8 +378,8 @@ export const WALLPAPERS: SurfaceDef[] = [
 
 export const FLOORS: SurfaceDef[] = [
   { id: 'floor_wood', name: '나무 바닥', price: 0, unlockLevel: 1, color: '#d8a973', accent: '#c08a52' },
-  { id: 'floor_tile', name: '체크 바닥', price: 70, unlockLevel: 2, color: '#f0e0c4', accent: '#dcc7a2' },
-  { id: 'floor_carpet', name: '융단 바닥', price: 120, unlockLevel: 4, color: '#e6b3a6', accent: '#d0968a' },
+  { id: 'floor_tile', name: '체크 바닥', price: 70, unlockLevel: 2, color: '#f0e0c4', accent: '#dcc7a2', pattern: 'check' },
+  { id: 'floor_carpet', name: '융단 바닥', price: 120, unlockLevel: 4, color: '#e6b3a6', accent: '#d0968a', pattern: 'carpet' },
 ];
 
 export const SURFACE_BY_ID: Record<string, SurfaceDef> = Object.fromEntries(

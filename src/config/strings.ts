@@ -1,4 +1,4 @@
-import type { AvatarId } from '@/types/game';
+import type { AvatarId, CharacterId } from '@/types/game';
 
 /**
  * 게임에서 자주 바뀌는 이름들을 한곳에 모은다.
@@ -46,3 +46,16 @@ export const AVATARS = [
 export function avatarName(id: AvatarId): string {
   return AVATARS.find((a) => a.id === id)?.name ?? '?';
 }
+
+/**
+ * 게임 안에서 움직이는 내 캐릭터. 목록에서 고르는 아바타 아이콘과는 다르다.
+ * 이름을 새로 만들 때 학생이 직접 고른다.
+ */
+export const CHARACTERS = [
+  { id: 'boy', name: '남자아이' },
+  { id: 'girl', name: '여자아이' },
+  { id: 'pucca', name: '뿌까' },
+  { id: 'danbi', name: '단비' },
+  { id: 'dooly', name: '둘리' },
+  { id: 'mario', name: '마리오' },
+] as const satisfies readonly { id: CharacterId; name: string }[];

@@ -292,21 +292,65 @@ const PAINTERS: Record<FurnitureShape, (args: ShapeArgs) => void> = {
     ctx.stroke();
   },
 
-  clock: ({ ctx, w, h, tint }) => {
-    circle(ctx, w / 2, h / 2, Math.min(w, h) / 2 - 4, { fill: tint, lineWidth: OUTLINE.bold });
-    circle(ctx, w / 2, h / 2, Math.min(w, h) / 2 - 14, { fill: PALETTE.cream, lineWidth: OUTLINE.thin });
+  clock: ({ ctx, w, h, tint, theme }) => {
+    const cx = w / 2;
+    const cy = h / 2;
+    const r = Math.min(w, h) / 2 - 4;
+    circle(ctx, cx, cy, r, { fill: tint, lineWidth: OUTLINE.bold });
+
+    // "알록달록 시계"는 색이 하나면 이름값을 못 한다. 테두리를 네 조각으로 나눠 칠한다.
+    const colorful = theme === 'colorful';
+    if (colorful) {
+      const rim = [PALETTE.gold, PALETTE.accentPink, PALETTE.accentMint, tint];
+      rim.forEach((color, i) => {
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.arc(cx, cy, r, (i * Math.PI) / 2 - Math.PI / 2, ((i + 1) * Math.PI) / 2 - Math.PI / 2);
+        ctx.closePath();
+        ctx.fillStyle = color;
+        ctx.fill();
+      });
+      circle(ctx, cx, cy, r, { lineWidth: OUTLINE.bold });
+    }
+
+    circle(ctx, cx, cy, r - 10, { fill: PALETTE.cream, lineWidth: OUTLINE.thin });
+
+    if (colorful) {
+      // 12·3·6·9 자리 눈금도 색으로
+      const marks = [PALETTE.accentPink, PALETTE.accentBlue, PALETTE.gold, PALETTE.accentMint];
+      marks.forEach((color, i) => {
+        const angle = (i * Math.PI) / 2 - Math.PI / 2;
+        circle(ctx, cx + Math.cos(angle) * (r - 17), cy + Math.sin(angle) * (r - 17), 3.5, {
+          fill: color,
+          lineWidth: 0,
+        });
+      });
+    }
+
     ctx.strokeStyle = PALETTE.outline;
     ctx.lineWidth = 4;
     ctx.beginPath();
-    ctx.moveTo(w / 2, h / 2);
-    ctx.lineTo(w / 2, h / 2 - 18);
-    ctx.moveTo(w / 2, h / 2);
-    ctx.lineTo(w / 2 + 14, h / 2 + 6);
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx, cy - 18);
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + 14, cy + 6);
     ctx.stroke();
-    circle(ctx, w / 2, h / 2, 4, { fill: PALETTE.outline, lineWidth: 0 });
+    circle(ctx, cx, cy, 4, { fill: PALETTE.outline, lineWidth: 0 });
   },
 
-  carpet: ({ ctx, w, h, tint }) => {
+  carpet: ({ ctx, w, h, tint, theme }) => {
+    if (theme === 'colorful') {
+      // 색 하나로는 "포근한 카펫"과 구분이 안 된다. 고리마다 다른 색을 쓴다.
+      const rings = [tint, PALETTE.gold, PALETTE.accentPink, PALETTE.accentBlue];
+      rings.forEach((color, i) => {
+        ellipse(ctx, w / 2, h / 2, w / 2 - 6 - i * 17, h / 2 - 6 - i * 5, {
+          fill: color,
+          lineWidth: i === 0 ? OUTLINE.bold : OUTLINE.thin,
+        });
+      });
+      return;
+    }
+
     ellipse(ctx, w / 2, h / 2, w / 2 - 6, h / 2 - 6, { fill: tint, lineWidth: OUTLINE.bold });
     ellipse(ctx, w / 2, h / 2, w / 2 - 20, h / 2 - 14, {
       fill: lighten(tint, 0.22),

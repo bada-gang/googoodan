@@ -3,8 +3,9 @@
  * Phaser 와 같은 에셋 키를 쓰므로, 실제 아트로 교체하면 UI 도 자동으로 따라간다.
  * 이모지는 쓰지 않는다. (명세 5, 75-1)
  */
-import { ASSETS, avatarTextureKey, furnitureTextureKey } from '@/config/assets';
+import { ASSETS, avatarTextureKey, furnitureTextureKey, surfaceTextureKey } from '@/config/assets';
 import { isArtReady, realAssetUrl } from '@/config/artReady';
+import type { SurfaceDef } from '@/config/catalog';
 import {
   FURNITURE_BY_ID,
   SELLABLE_NAME,
@@ -12,10 +13,11 @@ import {
   TREE_SPECIES,
   speciesOfSeed,
 } from '@/config/catalog';
-import { buildPlaceholderSheet } from '@/game/placeholder';
+import { buildPlaceholderSheet, buildCharacterPreview } from '@/game/placeholder';
 import type {
   AnimalSpeciesId,
   AvatarId,
+  CharacterId,
   SellableId,
   SupplyId,
   TreeSpeciesId,
@@ -44,6 +46,39 @@ export function iconUrl(assetKey: string): string {
 
 export function avatarIcon(id: AvatarId): string {
   return iconUrl(avatarTextureKey(id));
+}
+
+/**
+ * 벽지·바닥 미리보기.
+ *
+ * Phaser 가 방에서 하는 것과 같은 계산(고른 색 × 흰 바탕 무늬 타일)을 캔버스에서 그대로 한다.
+ * 상점 그림과 방에 깔았을 때가 다르면 아이가 사고 나서 "이거 아닌데" 하게 된다.
+ */
+export function surfaceIcon(surface: SurfaceDef, kind: 'wall' | 'floor'): string {
+  const key = `surface_${kind}_${surface.id}`;
+  const cached = cache.get(key);
+  if (cached) return cached;
+
+  const sheet = buildPlaceholderSheet(surfaceTextureKey(surface, kind));
+  // 바닥 타일 맨 위 15px 은 벽과 만나는 굽도리다. 견본에 넣으면 무늬가 아니라 테두리처럼 보인다.
+  const skip = kind === 'floor' ? 16 : 0;
+  const canvas = document.createElement('canvas');
+  canvas.width = sheet?.frameWidth ?? 64;
+  canvas.height = (sheet?.frameHeight ?? 64) - skip;
+  const ctx = canvas.getContext('2d');
+  let url = '';
+  if (ctx) {
+    ctx.fillStyle = surface.color;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    if (sheet) {
+      // tint 와 같은 곱셈 합성. 흰 부분은 색 그대로, 어두운 무늬만 진해진다.
+      ctx.globalCompositeOperation = 'multiply';
+      ctx.drawImage(sheet.canvas, 0, -skip);
+    }
+    url = canvas.toDataURL('image/png');
+  }
+  cache.set(key, url);
+  return url;
 }
 
 export function seedIcon(species: TreeSpeciesId): string {
@@ -100,4 +135,14 @@ export function itemCategory(itemId: string): 'seed' | 'harvest' | 'supply' | 'f
   if (itemId in SUPPLIES) return 'supply';
   if (itemId in SELLABLE_NAME) return 'harvest';
   return 'furniture';
+}
+
+/** 캐릭터 고르기용 미리보기. 서 있는 자세 첫 프레임만 잘라 쓴다. */
+export function characterIcon(id: CharacterId): string {
+  const key = 'preview_character_' + id;
+  const cached = cache.get(key);
+  if (cached) return cached;
+  const url = buildCharacterPreview(id).canvas.toDataURL('image/png');
+  cache.set(key, url);
+  return url;
 }

@@ -9,11 +9,12 @@ import {
   THEME_NAME,
   WALLPAPERS,
   type FurnitureTheme,
+  type SurfaceDef,
 } from '@/config/catalog';
 import { CURRENCY } from '@/config/strings';
 import { useGameStore } from '@/state/gameStore';
 import { useUiStore } from '@/state/uiStore';
-import { furnitureIcon } from '../common/icons';
+import { furnitureIcon, surfaceIcon } from '../common/icons';
 import { GameButton, ItemCard, MoneyTag, OverlayShell } from '../common/ui';
 import { LockedList } from './FarmShopOverlay';
 import { askMath, awardCorrect } from '../mathFlow';
@@ -86,6 +87,7 @@ export function FurnitureShopOverlay(): React.ReactElement {
         <div className="flex flex-col gap-5">
           <SurfaceGroup
             title="벽지"
+            kind="wall"
             surfaces={WALLPAPERS}
             level={level}
             money={money}
@@ -94,6 +96,7 @@ export function FurnitureShopOverlay(): React.ReactElement {
           />
           <SurfaceGroup
             title="바닥"
+            kind="floor"
             surfaces={FLOORS}
             level={level}
             money={money}
@@ -138,6 +141,7 @@ export function FurnitureShopOverlay(): React.ReactElement {
 
 function SurfaceGroup({
   title,
+  kind,
   surfaces,
   level,
   money,
@@ -145,7 +149,8 @@ function SurfaceGroup({
   onBuy,
 }: {
   title: string;
-  surfaces: { id: string; name: string; price: number; unlockLevel: number; color: string; accent: string }[];
+  kind: 'wall' | 'floor';
+  surfaces: SurfaceDef[];
   level: number;
   money: number;
   unlocked: string[];
@@ -169,11 +174,11 @@ function SurfaceGroup({
                 locked ? 'opacity-50 grayscale' : 'active:translate-y-[3px]',
               ].join(' ')}
             >
-              <span
-                className="block h-[54px] w-full rounded-xl border-4 border-ink"
-                style={{
-                  background: `repeating-linear-gradient(135deg, ${surface.color} 0 16px, ${surface.accent} 16px 32px)`,
-                }}
+              {/* 방에 깔릴 그림 그대로 보여 준다 */}
+              <img
+                src={surfaceIcon(surface, kind)}
+                alt=""
+                className="block h-[54px] w-full rounded-xl border-4 border-ink object-cover"
               />
               <span className="font-game text-[1.1rem]">{surface.name}</span>
               <span className="font-game text-[1rem] text-ink-soft">

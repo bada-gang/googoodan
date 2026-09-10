@@ -3,7 +3,7 @@
  * 이동·구경·가구 재배치에는 문제를 내지 않는다. (명세 29, 78)
  */
 import Phaser from 'phaser';
-import { ASSETS } from '@/config/assets';
+import { ASSETS, surfaceTextureKey } from '@/config/assets';
 import { PALETTE } from '@/config/artTokens';
 import { GAME_HEIGHT, GROUND_Y, HOME_EXIT_X, WORLD } from '@/config/layout';
 import { SURFACE_BY_ID } from '@/config/catalog';
@@ -110,7 +110,10 @@ export class HomeScene extends WorldScene {
     );
   }
 
-  /** 벽지/바닥은 흰색 텍스처에 tint 를 입혀 표현한다. */
+  /**
+   * 벽지/바닥은 흰색 텍스처에 tint 를 입혀 표현한다.
+   * 무늬가 있는 것은 tint 로 안 되므로 타일 그림 자체를 갈아 끼운다.
+   */
   private applySurfaces(): void {
     const { wallpaperId, floorId } = useGameStore.getState().home;
     const key = `${wallpaperId}|${floorId}`;
@@ -120,12 +123,14 @@ export class HomeScene extends WorldScene {
     const floor = SURFACE_BY_ID[floorId];
     if (wall) {
       // 색만 입히면 벽지 네 종류가 같은 무늬가 된다. 무늬가 있는 벽지는 타일 자체를 바꾼다.
-      this.wall.setTexture(
-        wall.pattern === 'star' ? ASSETS.environment.roomWallStar : ASSETS.environment.roomWall,
-      );
+      this.wall.setTexture(surfaceTextureKey(wall, 'wall'));
       this.wall.setTint(hexToInt(wall.color));
     }
-    if (floor) this.floor.setTint(hexToInt(floor.color));
+    if (floor) {
+      // 벽지와 같은 이유다. 색만 바꾸면 "체크 바닥"이 나무 판자 무늬로 나온다.
+      this.floor.setTexture(surfaceTextureKey(floor, 'floor'));
+      this.floor.setTint(hexToInt(floor.color));
+    }
   }
 
   /* ------------------------------ 랜덤 상자 ------------------------------ */

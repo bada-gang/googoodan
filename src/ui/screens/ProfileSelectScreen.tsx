@@ -9,8 +9,9 @@ import { useEffect, useState } from 'react';
 import { ASSETS } from '@/config/assets';
 import { GAME_TITLE } from '@/config/strings';
 import { repositories } from '@/data';
-import type { AvatarId, PlayerProfile } from '@/types/game';
+import type { AvatarId, CharacterId, PlayerProfile } from '@/types/game';
 import { AvatarGrid } from '../common/AvatarGrid';
+import { CharacterPicker } from '../common/CharacterPicker';
 import { avatarIcon, iconUrl } from '../common/icons';
 import { EmptyNote, GameButton, Icon } from '../common/ui';
 import { audio } from '@/audio/sfx';
@@ -24,6 +25,7 @@ export function ProfileSelectScreen({
   const [creating, setCreating] = useState(false);
   const [name, setName] = useState('');
   const [avatar, setAvatar] = useState<AvatarId>('rabbit');
+  const [character, setCharacter] = useState<CharacterId>('boy');
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -47,7 +49,7 @@ export function ProfileSelectScreen({
     setBusy(true);
     audio.unlock();
     try {
-      const profile = await repositories().player.createProfile(trimmed, avatar);
+      const profile = await repositories().player.createProfile(trimmed, avatar, character);
       onReady(profile);
     } catch (error) {
       console.error('[profile] 이름을 저장하지 못했습니다.', error);
@@ -60,7 +62,7 @@ export function ProfileSelectScreen({
       {profiles === null ? (
         <EmptyNote>친구들을 불러오는 중이에요…</EmptyNote>
       ) : creating ? (
-        <div className="flex flex-col items-center gap-5">
+        <div className="flex flex-col items-center gap-4">
           <p className="font-game text-[1.6rem] text-ink">이름을 적고 캐릭터를 골라 주세요</p>
 
           <input
@@ -71,6 +73,11 @@ export function ProfileSelectScreen({
             className="panel-paper font-game w-[380px] max-w-full px-6 py-4 text-center text-[2rem] text-ink outline-none focus:ring-4 focus:ring-gold"
           />
 
+          {/* 마을을 걸어 다닐 내 모습 */}
+          <CharacterPicker selected={character} onSelect={setCharacter} />
+
+          {/* 이름 목록에서 나를 찾을 때 쓰는 표시 (명세 10) */}
+          <p className="font-game text-[1.15rem] text-ink-soft">내 이름 옆에 붙일 그림</p>
           <AvatarGrid selected={avatar} onSelect={setAvatar} />
 
           <div className="mt-2 flex gap-4">

@@ -3,7 +3,9 @@
  * 머리 : 몸 = 1 : 1.5 비율, 측면 3/4 시점. (명세 41, 42)
  */
 import { OUTLINE, PALETTE } from '@/config/artTokens';
-import type { AvatarId } from '@/types/game';
+import type { AvatarId, CharacterId } from '@/types/game';
+import { LEG_SWING_RAD, PLAYER_FRAME, limb, type PlayerPose } from './body';
+import { drawDanbi, drawDooly, drawMario, drawPucca } from './famousCharacters';
 import {
   circle,
   darken,
@@ -19,70 +21,24 @@ import {
   type Sheet,
 } from './draw';
 
-export const PLAYER_FRAME = { width: 120, height: 160 };
+export { PLAYER_FRAME };
 
 /**
- * 다리를 최대로 벌렸을 때의 각도(라디안).
- * 크게 할수록 보폭이 넓어지지만 접지에서 다리가 짧아져 몸이 주저앉는다.
+ * 캐릭터별로 달라지는 부분.
+ * 비율·자세·애니메이션은 모두 같고 머리와 옷만 바꾼다 — 같은 세계의 두 아이로 보여야 한다.
  */
-const LEG_SWING_RAD = 0.55;
-
-interface PlayerPose {
-  /** 몸 전체 상하 흔들림 */
-  bob: number;
-  /** 다리 스윙 (-1 ~ 1) */
-  legSwing: number;
-  /**
-   * 흔드는 쪽 다리를 접어 드는 정도 (0~1). 디딘 다리는 0 이다.
-   * 막대 다리로 각도만 바꾸면 한 걸음 안에서 같은 그림이 두 번 나온다.
-   * 무릎이 접혀야 "나가는 다리"와 "디딘 다리"가 구분된다.
-   */
-  frontLift?: number;
-  backLift?: number;
-  /** 앞팔 각도 (라디안) */
-  frontArm: number;
-  backArm: number;
-  blink: boolean;
-  /** 입 크기 */
-  smile: number;
-  /** 머리 기울기 */
-  tilt: number;
+interface CharacterLook {
+  hair: 'short' | 'long';
+  skirt: boolean;
+  ribbon: boolean;
 }
 
-/**
- * 어깨/엉덩이에서 뻗는 팔다리 하나.
- *
- * 각도 규칙: **π 가 똑바로 아래**, 0 이 똑바로 위다. 호출부가 `Math.PI ± 흔들림` 으로 쓴다.
- * (cos 부호를 뒤집는 이유가 이것이다. 안 뒤집으면 π 가 위를 가리켜
- *  팔다리가 전부 몸통 안으로 접혀 들어가 화면에서 사라진다.)
- */
-function limb(
-  ctx: Ctx,
-  x: number,
-  y: number,
-  length: number,
-  angle: number,
-  width: number,
-  color: string,
-): { x: number; y: number } {
-  const endX = x + Math.sin(angle) * length;
-  const endY = y - Math.cos(angle) * length;
-  ctx.strokeStyle = PALETTE.outline;
-  ctx.lineWidth = width + OUTLINE.base;
-  ctx.beginPath();
-  ctx.moveTo(x, y);
-  ctx.lineTo(endX, endY);
-  ctx.stroke();
-  ctx.strokeStyle = color;
-  ctx.lineWidth = width;
-  ctx.beginPath();
-  ctx.moveTo(x, y);
-  ctx.lineTo(endX, endY);
-  ctx.stroke();
-  return { x: endX, y: endY };
-}
+const LOOKS: Record<'boy' | 'girl', CharacterLook> = {
+  boy: { hair: 'short', skirt: false, ribbon: false },
+  girl: { hair: 'long', skirt: true, ribbon: true },
+};
 
-function drawPlayer(ctx: Ctx, pose: PlayerPose): void {
+function drawPlayer(ctx: Ctx, pose: PlayerPose, look: CharacterLook): void {
   const cx = 60;
   const groundY = 152;
   const bob = pose.bob;
@@ -137,6 +93,50 @@ function drawPlayer(ctx: Ctx, pose: PlayerPose): void {
     lineWidth: OUTLINE.base,
   });
 
+  // 뒷머리는 몸통보다 **먼저** 그린다. 머리 블록 안에서 그리면 상의를 덮어 버린다.
+  // 실제로도 긴 머리는 어깨 뒤로 넘어간다.
+  if (look.hair === 'long') {
+    ctx.save();
+    ctx.translate(cx, headCY);
+    ctx.rotate(pose.tilt);
+    ctx.beginPath();
+    ctx.moveTo(-31, -8);
+    ctx.quadraticCurveTo(-38, 16, -29, 38);
+    ctx.quadraticCurveTo(-6, 44, 12, 38);
+    ctx.quadraticCurveTo(32, 18, 31, -8);
+    ctx.quadraticCurveTo(18, -30, -16, -28);
+    ctx.closePath();
+    paint(ctx, { fill: PALETTE.hair, lineWidth: OUTLINE.base });
+    ctx.save();
+    ctx.globalAlpha = 0.45;
+    ellipse(ctx, -22, 12, 7, 16, { fill: PALETTE.hairLight, lineWidth: 0 });
+    ctx.restore();
+    ctx.restore();
+  }
+
+  // 치마 — 다리 위, 몸통 아래에 그려야 허리에서 자연스럽게 이어진다
+  if (look.skirt) {
+    ctx.beginPath();
+    ctx.moveTo(cx - 19, hipY - 14);
+    ctx.lineTo(cx + 19, hipY - 14);
+    ctx.quadraticCurveTo(cx + 30, hipY + 12, cx + 26, hipY + 18);
+    ctx.quadraticCurveTo(cx, hipY + 24, cx - 26, hipY + 18);
+    ctx.quadraticCurveTo(cx - 30, hipY + 12, cx - 19, hipY - 14);
+    ctx.closePath();
+    paint(ctx, { fill: PALETTE.pants, lineWidth: OUTLINE.base });
+    ctx.save();
+    ctx.globalAlpha = 0.4;
+    ctx.fillStyle = PALETTE.pantsShade;
+    ctx.beginPath();
+    ctx.moveTo(cx + 6, hipY - 14);
+    ctx.lineTo(cx + 19, hipY - 14);
+    ctx.quadraticCurveTo(cx + 30, hipY + 12, cx + 26, hipY + 18);
+    ctx.quadraticCurveTo(cx + 14, hipY + 21, cx + 8, hipY + 20);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+
   // 몸통
   roundRect(ctx, cx - 24, shoulderY - 4, 48, 46, 18, {
     fill: PALETTE.shirt,
@@ -161,13 +161,14 @@ function drawPlayer(ctx: Ctx, pose: PlayerPose): void {
   ctx.save();
   ctx.translate(cx, headCY);
   ctx.rotate(pose.tilt);
+
   ellipse(ctx, 0, 0, 33, 31, { fill: PALETTE.skin, lineWidth: OUTLINE.base });
   ctx.save();
   ctx.globalAlpha = 0.4;
   ellipse(ctx, 12, 6, 16, 18, { fill: PALETTE.skinShade, lineWidth: 0 });
   ctx.restore();
 
-  // 머리카락: 위를 덮고 오른쪽으로 살짝 흐르는 형태
+  // 앞머리: 위를 덮고 오른쪽으로 살짝 흐르는 형태
   ctx.beginPath();
   ctx.moveTo(-33, -3);
   ctx.quadraticCurveTo(-34, -34, -2, -33);
@@ -181,8 +182,20 @@ function drawPlayer(ctx: Ctx, pose: PlayerPose): void {
   ellipse(ctx, -14, -22, 11, 6, { fill: PALETTE.hairLight, lineWidth: 0 });
   ctx.restore();
 
-  // 귀
-  ellipse(ctx, -30, 4, 5.5, 7, { fill: PALETTE.skin, lineWidth: OUTLINE.thin });
+  if (look.ribbon) {
+    // 옆머리 리본. 작은 화면에서도 여자 캐릭터임이 바로 읽히게 하는 표시다.
+    const rx = 26;
+    const ry = -22;
+    for (const dx of [-9, 9]) {
+      ellipse(ctx, rx + dx, ry, 8, 6.5, { fill: PALETTE.accentPink, lineWidth: OUTLINE.thin });
+    }
+    circle(ctx, rx, ry, 4, { fill: darken(PALETTE.accentPink, 0.25), lineWidth: OUTLINE.thin });
+  }
+
+  // 귀 (긴 머리에는 가려서 안 보인다)
+  if (look.hair === 'short') {
+    ellipse(ctx, -30, 4, 5.5, 7, { fill: PALETTE.skin, lineWidth: OUTLINE.thin });
+  }
 
   face(ctx, 4, 4, {
     eyeGap: 12,
@@ -194,12 +207,29 @@ function drawPlayer(ctx: Ctx, pose: PlayerPose): void {
   ctx.restore();
 }
 
-export function buildPlayerIdleSheet(): Sheet {
+/**
+ * 캐릭터 id → 몸 그리는 함수.
+ *
+ * 남자아이·여자아이는 머리와 옷만 다른 같은 몸이라 drawPlayer 하나로 처리하고,
+ * 아이들이 아는 캐릭터들은 몸 자체가 달라 각자 함수를 가진다.
+ * 어느 쪽이든 받는 자세(PlayerPose)는 같아서 걸음걸이는 하나다.
+ */
+const BODY: Record<CharacterId, (ctx: Ctx, pose: PlayerPose) => void> = {
+  boy: (ctx, pose) => drawPlayer(ctx, pose, LOOKS.boy),
+  girl: (ctx, pose) => drawPlayer(ctx, pose, LOOKS.girl),
+  pucca: drawPucca,
+  danbi: drawDanbi,
+  dooly: drawDooly,
+  mario: drawMario,
+};
+
+export function buildPlayerIdleSheet(character: CharacterId): Sheet {
+  const body = BODY[character];
   const sheet = makeSheet(PLAYER_FRAME.width, PLAYER_FRAME.height, 4);
   const bobs = [0, -2, -3, -1];
   for (let i = 0; i < 4; i += 1) {
     frame(sheet, i, (ctx) =>
-      drawPlayer(ctx, {
+      body(ctx, {
         bob: bobs[i],
         legSwing: 0,
         frontArm: 0.12 + i * 0.02,
@@ -237,12 +267,13 @@ const WALK_CYCLE: { legSwing: number; bob: number; frontLift: number; backLift: 
   { legSwing: 0.35, bob: -1, frontLift: 0, backLift: 0.25 },
 ];
 
-export function buildPlayerWalkSheet(): Sheet {
+export function buildPlayerWalkSheet(character: CharacterId): Sheet {
+  const body = BODY[character];
   const sheet = makeSheet(PLAYER_FRAME.width, PLAYER_FRAME.height, 6);
   for (let i = 0; i < 6; i += 1) {
     const { legSwing, bob, frontLift, backLift } = WALK_CYCLE[i];
     frame(sheet, i, (ctx) =>
-      drawPlayer(ctx, {
+      body(ctx, {
         bob,
         legSwing,
         frontLift,
@@ -261,12 +292,13 @@ export function buildPlayerWalkSheet(): Sheet {
   return sheet;
 }
 
-export function buildPlayerInteractSheet(): Sheet {
+export function buildPlayerInteractSheet(character: CharacterId): Sheet {
+  const body = BODY[character];
   const sheet = makeSheet(PLAYER_FRAME.width, PLAYER_FRAME.height, 4);
   const reach = [0.2, 0.9, 1.15, 0.6];
   for (let i = 0; i < 4; i += 1) {
     frame(sheet, i, (ctx) =>
-      drawPlayer(ctx, {
+      body(ctx, {
         bob: i === 1 || i === 2 ? -2 : 0,
         legSwing: 0.15,
         frontArm: reach[i],
@@ -280,12 +312,13 @@ export function buildPlayerInteractSheet(): Sheet {
   return sheet;
 }
 
-export function buildPlayerHappySheet(): Sheet {
+export function buildPlayerHappySheet(character: CharacterId): Sheet {
+  const body = BODY[character];
   const sheet = makeSheet(PLAYER_FRAME.width, PLAYER_FRAME.height, 4);
   const jump = [0, -10, -16, -8];
   for (let i = 0; i < 4; i += 1) {
     frame(sheet, i, (ctx) =>
-      drawPlayer(ctx, {
+      body(ctx, {
         bob: jump[i],
         legSwing: 0.5,
         // 두 팔을 양옆으로 번쩍. 부호가 다르면 두 팔이 같은 쪽으로 모인다.

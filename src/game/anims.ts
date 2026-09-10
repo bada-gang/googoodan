@@ -3,15 +3,13 @@
  * 텍스처에 들어 있는 프레임 수를 읽어 동일하게 동작한다. (명세 45, 58)
  */
 import type Phaser from 'phaser';
-import { ASSETS } from '@/config/assets';
+import { ASSETS, CHARACTER_IDS } from '@/config/assets';
 import { ANIMAL_LIST } from '@/config/catalog';
-import type { AnimalSpeciesId } from '@/types/game';
+import type { AnimalSpeciesId, CharacterId } from '@/types/game';
 
 export const ANIM = {
-  playerIdle: 'anim_player_idle',
-  playerWalk: 'anim_player_walk',
-  playerInteract: 'anim_player_interact',
-  playerHappy: 'anim_player_happy',
+  player: (character: CharacterId, action: 'idle' | 'walk' | 'interact' | 'happy') =>
+    'anim_player_' + character + '_' + action,
   animal: (species: AnimalSpeciesId, action: 'idle' | 'walk' | 'eat' | 'happy') =>
     `anim_${species}_${action}`,
 } as const;
@@ -40,11 +38,13 @@ function register(
 }
 
 export function registerAnimations(scene: Phaser.Scene): void {
-  register(scene, ANIM.playerIdle, ASSETS.player.idle, 4);
-  // 초당 360px 로 움직이므로 다리도 그만큼 빨리 돌아야 발이 덜 미끄러진다.
-  register(scene, ANIM.playerWalk, ASSETS.player.walk, 17);
-  register(scene, ANIM.playerInteract, ASSETS.player.interact, 10, 0);
-  register(scene, ANIM.playerHappy, ASSETS.player.happy, 9, 0);
+  for (const c of CHARACTER_IDS) {
+    register(scene, ANIM.player(c, 'idle'), ASSETS.characters[c].idle, 4);
+    // 초당 360px 로 움직이므로 다리도 그만큼 빨리 돌아야 발이 덜 미끄러진다.
+    register(scene, ANIM.player(c, 'walk'), ASSETS.characters[c].walk, 17);
+    register(scene, ANIM.player(c, 'interact'), ASSETS.characters[c].interact, 10, 0);
+    register(scene, ANIM.player(c, 'happy'), ASSETS.characters[c].happy, 9, 0);
+  }
 
   // 카탈로그에서 그대로 읽는다. 손으로 적어 두면 종을 늘렸을 때 빠뜨린다
   // (실제로 염소를 추가했을 때 여기 빠져서 애니메이션이 등록되지 않았다).

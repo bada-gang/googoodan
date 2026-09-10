@@ -9,6 +9,7 @@ import { useSettingsStore } from '@/state/settingsStore';
 import { useUiStore } from '@/state/uiStore';
 import { GameButton, OverlayShell } from '../common/ui';
 import { audio } from '@/audio/sfx';
+import { enterFullscreen, exitFullscreen, isFullscreenSupported } from '../fullscreen';
 
 function Toggle({
   label,
@@ -82,6 +83,19 @@ export function SettingsOverlay(): React.ReactElement {
           on={settings.leftHanded}
           onToggle={() => settings.toggle('leftHanded')}
         />
+
+        {isFullscreenSupported() && (
+          <Toggle
+            label="전체화면"
+            on={settings.fullscreen}
+            onToggle={() => {
+              const next = !settings.fullscreen;
+              settings.set('fullscreen', next);
+              // 이 탭 자체가 사용자 제스처라 지금 바로 전환할 수 있다
+              void (next ? enterFullscreen() : exitFullscreen());
+            }}
+          />
+        )}
 
         <div className="panel-paper mt-2 flex flex-col gap-1 px-5 py-4">
           <p className="font-game text-[1.35rem]">오늘까지의 기록</p>
