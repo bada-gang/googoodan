@@ -4,11 +4,12 @@
  * 화면 컴포넌트에서 계산하지 않고 여기로 모은다.
  * 저장소도 React 도 모르는 코드라, 집계 규칙이 의심스러우면 여기만 보면 된다. (개발원칙 9)
  */
+import { TABLES } from '@/config/curriculum';
 import type { GameSaveData, PlayerProfile } from '@/types/game';
 import type { LearningStats, ProblemRecord } from '@/types/learning';
 
-/** 게임에서 연습하는 단 (명세 11) */
-export const TABLES = [2, 3, 4, 5, 6, 7, 8, 9] as const;
+/** 단 목록은 @/config/curriculum 한 곳에만 있다. 교사 화면 코드는 그대로 다시 내보낸다. */
+export { TABLES };
 
 export interface TableAccuracy {
   table: number;

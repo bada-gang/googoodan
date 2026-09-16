@@ -48,11 +48,11 @@ export function FarmShopOverlay(): React.ReactElement {
       pushToast({ text: '돈이 모자라요. 수확한 것을 팔아 볼까요?', tone: 'warn' });
       return;
     }
-    const { correct } = await askMath('SHOP', `${supply.packName}를 사 볼까요?`);
-    if (!correct) return;
+    const math = await askMath('SHOP', `${supply.packName}를 사 볼까요?`);
+    if (!math.correct) return;
     if (!useGameStore.getState().buySupply(supply.id)) return;
     audio.play('coin');
-    awardCorrect('SHOP');
+    awardCorrect('SHOP', math);
     pushToast({ text: `${supply.packName}를 샀어요`, tone: 'reward' });
   };
 
@@ -61,11 +61,11 @@ export function FarmShopOverlay(): React.ReactElement {
       pushToast({ text: '돈이 모자라요. 수확한 것을 팔아 볼까요?', tone: 'warn' });
       return;
     }
-    const { correct } = await askMath('SHOP', `${species.seedName}을 사 볼까요?`);
-    if (!correct) return;
+    const math = await askMath('SHOP', `${species.seedName}을 사 볼까요?`);
+    if (!math.correct) return;
     if (!useGameStore.getState().buySeed(species.id)) return;
     audio.play('coin');
-    awardCorrect('SHOP');
+    awardCorrect('SHOP', math);
     pushToast({ text: `${species.seedName}을 샀어요`, tone: 'reward' });
   };
 
@@ -74,11 +74,11 @@ export function FarmShopOverlay(): React.ReactElement {
       pushToast({ text: '돈이 모자라요. 조금만 더 모아 볼까요?', tone: 'warn' });
       return;
     }
-    const { correct } = await askMath('SHOP', `${animal.name}을(를) 데려와 볼까요?`);
-    if (!correct) return;
+    const math = await askMath('SHOP', `${animal.name}을(를) 데려와 볼까요?`);
+    if (!math.correct) return;
     if (!useGameStore.getState().buyAnimal(animal.id)) return;
     audio.play('coin');
-    awardCorrect('SHOP');
+    awardCorrect('SHOP', math);
     pushToast({ text: `${animal.name}이(가) 우리에 왔어요!`, tone: 'reward' });
   };
 
@@ -87,19 +87,19 @@ export function FarmShopOverlay(): React.ReactElement {
   const sellOne = async (id: SellableId) => {
     const count = inventory[id] ?? 0;
     if (count <= 0) return;
-    const { correct } = await askMath('SELL', `${SELLABLE_NAME[id]} ${count}개를 팔아 볼까요?`);
-    if (!correct) return;
+    const math = await askMath('SELL', `${SELLABLE_NAME[id]} ${count}개를 팔아 볼까요?`);
+    if (!math.correct) return;
     const gained = useGameStore.getState().sellItem(id, count);
     if (gained <= 0) return;
     audio.play('coin');
-    awardCorrect('SELL');
+    awardCorrect('SELL', math);
     pushToast({ text: `${gained}${CURRENCY}을 받았어요`, tone: 'reward' });
   };
 
   const sellAll = async () => {
     if (sellableTotal <= 0) return;
-    const { correct } = await askMath('SELL', '가방에 있는 것을 모두 팔아 볼까요?');
-    if (!correct) return;
+    const math = await askMath('SELL', '가방에 있는 것을 모두 팔아 볼까요?');
+    if (!math.correct) return;
     const store = useGameStore.getState();
     let gained = 0;
     for (const id of SELLABLE_ORDER) {
@@ -107,7 +107,7 @@ export function FarmShopOverlay(): React.ReactElement {
     }
     if (gained <= 0) return;
     audio.play('coin');
-    awardCorrect('SELL');
+    awardCorrect('SELL', math);
     pushToast({ text: `${gained}${CURRENCY}을 받았어요`, tone: 'reward' });
   };
 

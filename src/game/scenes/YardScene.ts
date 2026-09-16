@@ -220,7 +220,7 @@ export class YardScene extends WorldScene {
     if (actionId === 'grow') {
       const species = plot.species;
       if (!species) return;
-      this.askMath('GROW', `${TREE_SPECIES[species].name}를 키워 볼까요?`, () => {
+      this.askMath('GROW', `${TREE_SPECIES[species].name}를 키워 볼까요?`, (math) => {
         const before = this.plot(plotId)?.stage;
         // 물이 없으면 아무 일도 일어나지 않는다.
         if (!useGameStore.getState().growPlot(plotId)) {
@@ -240,7 +240,7 @@ export class YardScene extends WorldScene {
         } else {
           floatText(this, x, TREE_BASE_Y - 130, '쑥쑥!', PALETTE.leafShade);
         }
-        this.awardExperience('GROW');
+        this.awardExperience('GROW', math);
       });
       return;
     }
@@ -249,8 +249,8 @@ export class YardScene extends WorldScene {
       const species = plot.species;
       if (!species) return;
       const def = TREE_SPECIES[species];
-      this.askMath('HARVEST', `${def.fruitName}를 따 볼까요?`, (wrongAttempts) => {
-        const result = useGameStore.getState().harvestPlot(plotId, wrongAttempts);
+      this.askMath('HARVEST', `${def.fruitName}를 따 볼까요?`, (math) => {
+        const result = useGameStore.getState().harvestPlot(plotId, math.wrongAttempts);
         if (!result) return;
         const x = plotX(plot.index);
 
@@ -280,7 +280,7 @@ export class YardScene extends WorldScene {
         } else {
           this.toast(`${def.fruitName} ${result.count}개를 얻었어요`, 'reward');
         }
-        this.awardExperience('HARVEST');
+        this.awardExperience('HARVEST', math);
       });
     }
   }
@@ -289,13 +289,13 @@ export class YardScene extends WorldScene {
     const plot = this.plot(plotId);
     if (!plot || plot.species) return;
     const def = TREE_SPECIES[species];
-    this.askMath('PLANT', `${def.seedName}을 심어 볼까요?`, () => {
+    this.askMath('PLANT', `${def.seedName}을 심어 볼까요?`, (math) => {
       if (!useGameStore.getState().plantSeed(plotId, species)) return;
       const x = plotX(plot.index);
       soilPuff(this, x, PLOT_BASE_Y - 20);
       audio.play('place');
       floatText(this, x, PLOT_BASE_Y - 90, `${def.name} 심기`, PALETTE.leafShade);
-      this.awardExperience('PLANT');
+      this.awardExperience('PLANT', math);
     });
   }
 
@@ -490,7 +490,7 @@ export class YardScene extends WorldScene {
     const sprite = this.animalSprites.get(animalId);
 
     if (actionId === 'feed') {
-      this.askMath('ANIMAL', `${def.name}에게 먹이를 줄까요?`, () => {
+      this.askMath('ANIMAL', `${def.name}에게 먹이를 줄까요?`, (math) => {
         if (!useGameStore.getState().feedAnimal(animalId)) return;
         audio.play('animal');
         if (sprite) {
@@ -506,14 +506,14 @@ export class YardScene extends WorldScene {
           this.toast(`${def.produceName}이(가) 준비됐어요!`, 'reward');
           if (sprite) burstStars(this, sprite.x, sprite.y - 60, 9);
         }
-        this.awardExperience('ANIMAL');
+        this.awardExperience('ANIMAL', math);
       });
       return;
     }
 
     if (actionId === 'collect') {
-      this.askMath('ANIMAL', `${def.produceName}을(를) 받아 볼까요?`, (wrongAttempts) => {
-        const result = useGameStore.getState().collectProduce(animalId, wrongAttempts);
+      this.askMath('ANIMAL', `${def.produceName}을(를) 받아 볼까요?`, (math) => {
+        const result = useGameStore.getState().collectProduce(animalId, math.wrongAttempts);
         if (!result) return;
 
         // 다 틀려도 최소 1개는 받는다 (PRODUCE_BY_ATTEMPTS)
@@ -538,7 +538,7 @@ export class YardScene extends WorldScene {
           floatText(this, sprite.x, sprite.y - 120, `${def.produceName} +${result.count}`, PALETTE.gold);
         }
         this.toast(`${def.produceName} ${result.count}개를 얻었어요`, 'reward');
-        this.awardExperience('ANIMAL');
+        this.awardExperience('ANIMAL', math);
       });
     }
   }

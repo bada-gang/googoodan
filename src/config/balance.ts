@@ -86,15 +86,21 @@ export const STAGE_LABEL: Record<TreeStage, string> = {
 /* ----------------------------- 정답까지 걸린 횟수 보상 ---------------------------- */
 
 /**
- * 4지선다에서 고른 오답은 비활성화되므로, 3번 틀리면 남은 하나를 찍은 것과 같다.
- * 그래서 한 번에 맞힐수록 많이 얻는다.
- * 배열의 인덱스가 "틀린 횟수", 값이 "얻는 개수". 마지막 값이 그 이상일 때의 값.
+ * 한 번에 맞힐수록 많이 얻는다.
+ * 배열의 인덱스가 "틀린 횟수", 값이 "얻는 개수". 마지막 값이 그 이상일 때의 값이다.
+ *
+ * 한 문제에서 두 번 틀리면 그 문제는 끝나고 새 문제를 받으므로
+ * (WRONG_LIMIT_PER_QUESTION), 틀린 횟수는 문제를 넘나들며 쌓인다.
+ * 예: 두 번 틀려 답을 보고 → 새 문제를 한 번에 맞힘 = 2번 틀림.
  *
  * 다만 마지막 값도 0 이 아니다. 다 틀리고 마지막에 맞혀도 최소 1개는 받는다 —
  * 끝까지 풀었는데 빈손이면 문제를 푸는 일 자체가 벌처럼 느껴진다.
+ *
+ * 열매는 나무에 달린 개수(TreeSpecies.yield)로 한 번 더 잘린다.
+ * 그래서 yield 가 HARVEST_BY_ATTEMPTS[0] 보다 작으면 무실수 수확이 깎인다.
  */
-export const HARVEST_BY_ATTEMPTS = [3, 2, 1, 1];
-export const PRODUCE_BY_ATTEMPTS = [2, 1, 1, 1];
+export const HARVEST_BY_ATTEMPTS = [4, 3, 2, 1];
+export const PRODUCE_BY_ATTEMPTS = [3, 2, 1];
 
 function amountFor(table: number[], wrongAttempts: number): number {
   return table[Math.min(wrongAttempts, table.length - 1)];
@@ -157,6 +163,19 @@ export const WRONG_REVIEW_MAX_GAP = 10;
 export const MASTERY_STREAK = 3;
 /** 같은 문제가 연속으로 나오지 않도록 기억할 최근 문제 수 */
 export const RECENT_MEMORY = 4;
+
+/* ------------------------------ 한 문제의 기회 ------------------------------- */
+
+/**
+ * 한 문제에서 틀릴 수 있는 횟수. (요청 2)
+ *
+ * 보기가 네 개인데 무한히 고를 수 있으면 하나씩 지워 가는 것이 이기는 방법이 되고,
+ * 곱셈구구를 떠올리지 않아도 결국 맞힌다. 두 번까지만 허용하고 그 뒤에는
+ * 정답을 보여 준 다음 새 문제를 낸다 — 경험치는 그 문제에 대해 주지 않는다.
+ *
+ * 1 로 낮추면 한 번만 틀려도 끝난다. 2학년에게는 너무 빡빡하다고 보고 2 로 둔다.
+ */
+export const WRONG_LIMIT_PER_QUESTION = 2;
 
 /* -------------------------------- 문제 유형 비율 ------------------------------ */
 

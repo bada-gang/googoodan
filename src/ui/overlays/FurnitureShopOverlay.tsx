@@ -41,11 +41,11 @@ export function FurnitureShopOverlay(): React.ReactElement {
       pushToast({ text: '돈이 모자라요', tone: 'warn' });
       return;
     }
-    const { correct } = await askMath('SHOP', `${name}을(를) 사 볼까요?`);
-    if (!correct) return;
+    const math = await askMath('SHOP', `${name}을(를) 사 볼까요?`);
+    if (!math.correct) return;
     if (!useGameStore.getState().buyFurniture(itemId)) return;
     audio.play('coin');
-    awardCorrect('SHOP');
+    awardCorrect('SHOP', math);
     pushToast({ text: `${name}을(를) 샀어요. 꾸미기에서 놓아 보세요`, tone: 'reward' });
   };
 
@@ -55,9 +55,9 @@ export function FurnitureShopOverlay(): React.ReactElement {
       return;
     }
     if (price > 0) {
-      const { correct } = await askMath('SHOP', `${name}을(를) 사 볼까요?`);
-      if (!correct) return;
-      awardCorrect('SHOP');
+      const math = await askMath('SHOP', `${name}을(를) 사 볼까요?`);
+      if (!math.correct) return;
+      awardCorrect('SHOP', math);
     }
     if (!useGameStore.getState().buySurface(surfaceId)) return;
     audio.play('coin');

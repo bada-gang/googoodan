@@ -21,7 +21,7 @@ export interface TreeSpecies {
   fruitId: SellableId;
   fruitName: string;
   fruitPrice: number;
-  /** 열매 맺을 때 한 번에 달리는 개수 */
+  /** 열매 맺을 때 한 번에 달리는 개수. HARVEST_BY_ATTEMPTS[0] 과 같아야 무실수 수확이 온전히 들어온다. */
   yield: number;
   unlockLevel: number;
   /** 단계 하나를 올리는 데 필요한 정답 수 */
@@ -37,7 +37,7 @@ export const TREE_SPECIES: Record<TreeSpeciesId, TreeSpecies> = {
     fruitId: 'apple',
     fruitName: '사과',
     fruitPrice: 6,
-    yield: 3,
+    yield: 4,
     unlockLevel: 1,
     growthPerStage: 1,
   },
@@ -49,7 +49,7 @@ export const TREE_SPECIES: Record<TreeSpeciesId, TreeSpecies> = {
     fruitId: 'orange',
     fruitName: '오렌지',
     fruitPrice: 11,
-    yield: 3,
+    yield: 4,
     unlockLevel: 2,
     growthPerStage: 1,
   },
@@ -62,7 +62,7 @@ export const TREE_SPECIES: Record<TreeSpeciesId, TreeSpecies> = {
     fruitName: '복숭아',
     // 오렌지보다 문제를 하나 더 풀어야 하므로 값도 그만큼 높다. (곡선 역전 방지)
     fruitPrice: 20,
-    yield: 3,
+    yield: 4,
     unlockLevel: 3,
     growthPerStage: 2,
   },
@@ -74,7 +74,7 @@ export const TREE_SPECIES: Record<TreeSpeciesId, TreeSpecies> = {
     fruitId: 'cherry',
     fruitName: '체리',
     fruitPrice: 22,
-    yield: 3,
+    yield: 4,
     unlockLevel: 4,
     growthPerStage: 2,
   },
@@ -86,7 +86,7 @@ export const TREE_SPECIES: Record<TreeSpeciesId, TreeSpecies> = {
     fruitId: 'grape',
     fruitName: '포도',
     fruitPrice: 27,
-    yield: 3,
+    yield: 4,
     unlockLevel: 5,
     growthPerStage: 2,
   },
@@ -98,7 +98,7 @@ export const TREE_SPECIES: Record<TreeSpeciesId, TreeSpecies> = {
     fruitId: 'persimmon',
     fruitName: '감',
     fruitPrice: 40,
-    yield: 3,
+    yield: 4,
     unlockLevel: 6,
     growthPerStage: 3,
   },

@@ -6,7 +6,8 @@ import type { InteractionPrompt, SceneKey, ToastPayload } from '@/bridge/events'
 import type { MathContext, MathQuestion } from '@/types/learning';
 import type { PlacementArea } from '@/types/game';
 
-export type AppScreen = 'profile' | 'tables' | 'game';
+/** 'ended' 는 수업을 끝내고 저장까지 마친 상태. 여기서는 게임으로 되돌아가지 않는다. */
+export type AppScreen = 'profile' | 'tables' | 'game' | 'ended';
 
 export type OverlayKind =
   | null

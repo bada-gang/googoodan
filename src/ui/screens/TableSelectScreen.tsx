@@ -5,18 +5,19 @@
  * 캐릭터 바꾸기도 여기 둔다. 이름을 이미 고른 뒤라 "누구 것을 바꿀까요"를 물을 필요가 없고,
  * 이름 카드가 "게임 시작"과 "캐릭터 바꾸기" 두 가지를 겸하지 않아도 된다.
  */
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { TABLES } from '@/config/curriculum';
+import { pickPracticeTables } from '@/math/practiceNeeds';
 import { repositories } from '@/data';
 import type { AvatarId, CharacterId, PlayerProfile } from '@/types/game';
 import { characterOf } from '@/types/game';
+import type { LearningStats } from '@/types/learning';
 import { AvatarGrid } from '../common/AvatarGrid';
 import { CharacterPicker } from '../common/CharacterPicker';
 import { avatarIcon } from '../common/icons';
 import { GameButton, Icon } from '../common/ui';
 import { ScreenShell } from './ProfileSelectScreen';
 import { audio } from '@/audio/sfx';
-
-const TABLES = [2, 3, 4, 5, 6, 7, 8, 9];
 
 export function TableSelectScreen({
   profile,
@@ -35,12 +36,47 @@ export function TableSelectScreen({
   const [avatar, setAvatar] = useState<AvatarId>(profile.avatarId);
   const [character, setCharacter] = useState<CharacterId>(characterOf(profile));
   const [busy, setBusy] = useState(false);
+  /** 이 학생의 지난 기록. "연습 필요"를 계산하는 데만 쓴다. */
+  const [stats, setStats] = useState<LearningStats | null>(null);
+  /** 퀵버튼이 무엇을 골랐는지 한 줄 설명 */
+  const [pickNote, setPickNote] = useState('');
+
+  // 기록은 게임에 들어갈 때 다시 제대로 읽는다. 여기서는 단을 고르는 데만 쓰므로
+  // 실패해도 조용히 넘어간다 — 이 화면이 멈추면 수업이 멈춘다.
+  useEffect(() => {
+    let alive = true;
+    void repositories()
+      .learning.loadStats(profile.id)
+      .then((loaded) => {
+        if (alive) setStats(loaded);
+      })
+      .catch((error) => {
+        console.error('[table] 지난 기록을 불러오지 못했습니다.', error);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [profile.id]);
 
   const toggle = (table: number) => {
     audio.play('tap');
+    setPickNote('');
     setSelected((prev) =>
       prev.includes(table) ? prev.filter((t) => t !== table) : [...prev, table],
     );
+  };
+
+  const selectAll = () => {
+    audio.play('tap');
+    setSelected([...TABLES]);
+    setPickNote('전체를 골랐어요');
+  };
+
+  const selectPractice = () => {
+    audio.play('tap');
+    const pick = pickPracticeTables(stats);
+    setSelected(pick.tables);
+    setPickNote(pick.reason);
   };
 
   const saveLook = async () => {
@@ -126,10 +162,32 @@ export function TableSelectScreen({
           })}
         </div>
 
-        <p className="font-game min-h-[2rem] text-[1.2rem] text-ink-soft">
+        {/* 퀵버튼. 2학년이 여덟 개를 보고 약한 단을 스스로 고르기는 어렵다. */}
+        <div className="flex gap-3">
+          <GameButton tone="sky" onClick={selectAll}>
+            전체 선택
+          </GameButton>
+          <GameButton tone="berry" onClick={selectPractice}>
+            연습 필요
+          </GameButton>
+          {selected.length > 0 && (
+            <GameButton
+              onClick={() => {
+                audio.play('tap');
+                setSelected([]);
+                setPickNote('');
+              }}
+            >
+              지우기
+            </GameButton>
+          )}
+        </div>
+
+        <p className="font-game min-h-[2rem] text-center text-[1.2rem] text-ink-soft">
           {selected.length === 0
             ? '연습할 단을 하나 이상 골라 주세요'
             : `${[...selected].sort((a, b) => a - b).join('단, ')}단을 연습해요`}
+          {pickNote && <span className="text-ink"> — {pickNote}</span>}
         </p>
 
         <div className="flex gap-4">

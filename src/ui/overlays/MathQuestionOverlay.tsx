@@ -3,16 +3,16 @@
  *
  * - 시험지가 아니라 게임 세계의 종이 카드처럼 보이게 한다.
  * - 문제는 아주 크게, 선택지는 2×2 큰 버튼.
- * - 오답이어도 잃는 것은 없고, 다시 고를 수 있다.
+ * - 오답이어도 잃는 것은 없다. 다만 두 번 틀리면 정답을 알려주고 새 문제로 넘어간다. (요청 2)
  */
 import { useEffect, useMemo, useState } from 'react';
 import { hintFor } from '@/math/questionGenerator';
 import { useUiStore } from '@/state/uiStore';
-import { cancelMath, completeMath, submitAnswer } from '../mathFlow';
+import { cancelMath, completeMath, retryWithNewQuestion, submitAnswer } from '../mathFlow';
 import { starIcon } from '../common/icons';
-import { Icon } from '../common/ui';
+import { GameButton, Icon } from '../common/ui';
 
-type Phase = 'asking' | 'correct';
+type Phase = 'asking' | 'correct' | 'failed';
 
 export function MathQuestionOverlay(): React.ReactElement | null {
   const request = useUiStore((s) => s.math);
@@ -48,6 +48,9 @@ export function MathQuestionOverlay(): React.ReactElement | null {
     setWrongChoices((prev) => [...prev, value]);
     setShaking(value);
     window.setTimeout(() => setShaking(null), 430);
+    // 두 번 틀렸다. 답을 알려주고, 학생이 누를 때 새 문제를 받는다.
+    // 자동으로 넘기지 않는다 — 정답을 읽을 시간이 필요하다.
+    if (result === 'failed') setPhase('failed');
   };
 
   const solved = `${question.left} × ${question.right} = ${question.product}`;
@@ -60,17 +63,32 @@ export function MathQuestionOverlay(): React.ReactElement | null {
         {/* 상황 안내 (게임 행동과 이어져 있음을 보여준다) */}
         <p className="font-game text-center text-[1.35rem] leading-tight text-ink-soft">{title}</p>
 
-        {/* 문제 */}
+        {/* 문제 — 맞혔거나 답을 알려줄 때는 완성된 식을 보여 준다 */}
         <div className="panel-paper relative flex w-full items-center justify-center px-6 py-6">
           <p className="font-game text-center text-[4.4rem] leading-none text-ink stroke-ink">
-            {phase === 'correct' ? solved : question.prompt}
+            {phase === 'asking' ? question.prompt : solved}
           </p>
           {phase === 'correct' && <StarBurst />}
         </div>
 
-        {phase === 'correct' ? (
+        {phase === 'correct' && (
           <p className="font-game animate-pop-in text-[2rem] text-leaf-dark">정답이에요!</p>
-        ) : (
+        )}
+
+        {phase === 'failed' && (
+          <div className="flex flex-col items-center gap-2">
+            {/* 꾸짖지 않는다. 답을 알려주고 새 문제로 넘긴다. (명세 57) */}
+            <p className="font-game animate-pop-in text-center text-[1.9rem] text-ink">
+              정답은 <span className="text-berry">{question.correctAnswer}</span>
+              이에요. {hint}
+            </p>
+            <p className="font-game text-center text-[1.25rem] text-ink-soft">
+              새 문제를 맞히면 계속할 수 있어요
+            </p>
+          </div>
+        )}
+
+        {phase === 'asking' && (
           <div className="grid w-full grid-cols-2 gap-4">
             {question.choices.map((choice) => {
               const isWrong = wrongChoices.includes(choice);
@@ -100,7 +118,13 @@ export function MathQuestionOverlay(): React.ReactElement | null {
           </p>
         )}
 
-        {phase === 'asking' && (
+        {phase === 'failed' && (
+          <GameButton tone="gold" big onClick={retryWithNewQuestion}>
+            새 문제 풀기
+          </GameButton>
+        )}
+
+        {phase !== 'correct' && (
           <button
             type="button"
             onClick={cancelMath}

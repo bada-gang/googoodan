@@ -57,6 +57,8 @@ export interface MathResultPayload {
   correct: boolean;
   /** 맞히기까지 틀린 횟수. 수확량·생산물 개수를 정하는 데 쓴다. */
   wrongAttempts: number;
+  /** 두 번 틀려 답을 보고 넘어간 문제 수. 하나라도 있으면 경험치가 없다. (요청 2) */
+  failedQuestions: number;
 }
 
 export interface MiniGameResultPayload {

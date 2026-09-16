@@ -331,7 +331,11 @@ export class FruitCatchScene extends Phaser.Scene {
         const store = useGameStore.getState();
         store.addChest(chestCount);
         store.claimMiniGameReward();
-        const levelUp = store.gainExperience('MINIGAME');
+        // 두 번 틀려 답을 보고 넘어간 문제가 있으면 경험치는 없다. 상자는 준다. (요청 2)
+        const levelUp =
+          payload.failedQuestions > 0
+            ? { leveledUp: false, newLevel: store.level }
+            : store.gainExperience('MINIGAME');
         if (levelUp.leveledUp) gameEvents.emit('level:up', { level: levelUp.newLevel });
         audio.play('coin');
         // 어디로 가야 하는지 3초 동안 안내한다.

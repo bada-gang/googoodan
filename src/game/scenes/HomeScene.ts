@@ -54,6 +54,11 @@ export class HomeScene extends WorldScene {
     return HOME_EXIT_X + 190;
   }
 
+  /** 집 안에서는 별이 보이지 않는다. 창문 밖이 어두워지는 것으로 밤을 안다. */
+  protected get isOutdoor(): boolean {
+    return false;
+  }
+
   protected buildWorld(): void {
     this.placementArea = 'home';
 
@@ -175,7 +180,7 @@ export class HomeScene extends WorldScene {
   }
 
   private openChest(): void {
-    this.askMath('CHEST', '상자를 열어 볼까요?', () => {
+    this.askMath('CHEST', '상자를 열어 볼까요?', (math) => {
       const reward = useGameStore.getState().openChest();
       if (reward === null) return;
       audio.play('coin');
@@ -196,7 +201,7 @@ export class HomeScene extends WorldScene {
 
       floatText(this, CHEST_X, GROUND_Y - 120, `+${formatMoney(reward)}`, PALETTE.gold);
       this.toast(`${chestMessage(reward)} ${formatMoney(reward)}을 받았어요!`, 'reward');
-      this.awardExperience('CHEST');
+      this.awardExperience('CHEST', math);
     });
   }
 

@@ -36,8 +36,8 @@ export function useGameBridge(): void {
 
       // Phaser 가 문제를 요청하면 여기서 문제를 만들어 보여주고 결과를 돌려준다.
       gameEvents.on('math:request', ({ requestId, context, title }) => {
-        void askMath(context, title, requestId).then(({ correct, wrongAttempts }) => {
-          gameEvents.emit('math:result', { requestId, correct, wrongAttempts });
+        void askMath(context, title, requestId).then(({ correct, wrongAttempts, failedQuestions }) => {
+          gameEvents.emit('math:result', { requestId, correct, wrongAttempts, failedQuestions });
         });
       }),
     ];

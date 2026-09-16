@@ -14,6 +14,7 @@ import type { PlayerProfile } from '@/types/game';
 import { audio } from '@/audio/sfx';
 import { enterFullscreenOnFirstTouch } from '@/ui/fullscreen';
 import { LogicalLayer, useShellScale } from '@/ui/common/LogicalLayer';
+import { GameEndScreen } from '@/ui/screens/GameEndScreen';
 import { GameScreen } from '@/ui/screens/GameScreen';
 import { ProfileSelectScreen } from '@/ui/screens/ProfileSelectScreen';
 import { TableSelectScreen } from '@/ui/screens/TableSelectScreen';
@@ -103,6 +104,8 @@ export function App(): React.ReactElement {
           )}
 
           {screen === 'game' && <GameScreen />}
+
+          {screen === 'ended' && <GameEndScreen />}
         </LogicalLayer>
       </div>
 

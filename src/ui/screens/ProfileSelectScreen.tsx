@@ -7,6 +7,7 @@
  */
 import { useEffect, useState } from 'react';
 import { ASSETS } from '@/config/assets';
+import { ALLOW_NEW_PROFILE } from '@/config/features';
 import { GAME_TITLE } from '@/config/strings';
 import { repositories } from '@/data';
 import type { AvatarId, CharacterId, PlayerProfile } from '@/types/game';
@@ -33,13 +34,15 @@ export function ProfileSelectScreen({
       .player.listProfiles()
       .then((list) => {
         setProfiles(list);
-        if (list.length === 0) setCreating(true);
+        // 이름이 하나도 없으면 만들기 화면부터 보여 준다. 만들기를 막아 둔 학기에는
+        // 그냥 빈 목록을 보여 주고 선생님을 부르게 한다.
+        if (list.length === 0 && ALLOW_NEW_PROFILE) setCreating(true);
       })
-      // 목록을 못 불러와도 화면이 멈추면 안 된다. 새 이름부터 만들게 한다.
+      // 목록을 못 불러와도 화면이 멈추면 안 된다.
       .catch((error) => {
         console.error('[profile] 친구 목록을 불러오지 못했습니다.', error);
         setProfiles([]);
-        setCreating(true);
+        if (ALLOW_NEW_PROFILE) setCreating(true);
       });
   }, []);
 
@@ -61,7 +64,7 @@ export function ProfileSelectScreen({
     <ScreenShell title={GAME_TITLE}>
       {profiles === null ? (
         <EmptyNote>친구들을 불러오는 중이에요…</EmptyNote>
-      ) : creating ? (
+      ) : creating && ALLOW_NEW_PROFILE ? (
         <div className="flex flex-col items-center gap-4">
           <p className="font-game text-[1.6rem] text-ink">이름을 적고 캐릭터를 골라 주세요</p>
 
@@ -93,6 +96,10 @@ export function ProfileSelectScreen({
         <div className="flex w-full flex-col items-center gap-5">
           <p className="font-game text-[1.6rem] text-ink">내 이름을 선택하세요</p>
 
+          {profiles.length === 0 && (
+            <EmptyNote>이름이 아직 없어요. 선생님께 말씀해 주세요.</EmptyNote>
+          )}
+
           <div className="no-scrollbar grid max-h-[336px] w-full grid-cols-3 gap-4 overflow-y-auto px-2 pb-2">
             {profiles.map((profile) => (
               <button
@@ -113,9 +120,12 @@ export function ProfileSelectScreen({
             ))}
           </div>
 
-          <GameButton tone="gold" big onClick={() => setCreating(true)}>
-            새 친구 만들기
-          </GameButton>
+          {/* 학기 초에 이름을 다 만든 뒤에는 이 버튼을 감춘다. (요청 1) */}
+          {ALLOW_NEW_PROFILE && (
+            <GameButton tone="gold" big onClick={() => setCreating(true)}>
+              새 친구 만들기
+            </GameButton>
+          )}
         </div>
       )}
     </ScreenShell>

@@ -10,6 +10,14 @@
 import Phaser from 'phaser';
 import { ASSETS, furnitureTextureKey } from '@/config/assets';
 import { PALETTE } from '@/config/artTokens';
+import {
+  PHASE_CHANGE_TEXT,
+  cycleNow,
+  phaseAt,
+  starAlphaAt,
+  tintAt,
+  type DayPhase,
+} from '@/config/dayNight';
 import { GAME_HEIGHT, GAME_WIDTH, GROUND_Y } from '@/config/layout';
 import { gameEvents } from '@/bridge/eventBus';
 import type {
@@ -46,6 +54,14 @@ interface ParallaxLayer {
   factor: number;
 }
 
+/** 문제를 맞히고 돌아온 결과. 수확량과 경험치를 정하는 데 쓴다. */
+export interface MathAskResult {
+  /** 틀린 횟수 전체 (새 문제를 받은 것까지 합친다). 적을수록 많이 딴다. */
+  wrongAttempts: number;
+  /** 두 번 틀려 답을 보고 넘어간 문제 수. 하나라도 있으면 경험치가 없다. (요청 2) */
+  failedQuestions: number;
+}
+
 export abstract class WorldScene extends Phaser.Scene {
   protected player!: Player;
   protected interactables: Interactable[] = [];
@@ -61,6 +77,13 @@ export abstract class WorldScene extends Phaser.Scene {
   private cursors?: Phaser.Types.Input.Keyboard.CursorKeys;
   private stepTimer = 0;
 
+  /* ---- 밤낮 ---- */
+  private skyOverlay?: Phaser.GameObjects.Rectangle;
+  private stars: Phaser.GameObjects.Image[] = [];
+  /** 덮개를 다시 칠하기까지 남은 시간. 매 프레임 칠할 필요가 없다 */
+  private dayNightTimer = 0;
+  private lastPhase: DayPhase | null = null;
+
   /* ---- 꾸미기 상태 ---- */
   private decorating = false;
   private decorateTool: DecorateTool = 'move';
@@ -74,6 +97,11 @@ export abstract class WorldScene extends Phaser.Scene {
   abstract get worldWidth(): number;
   protected abstract buildWorld(): void;
   protected abstract get defaultSpawnX(): number;
+
+  /** 실내에는 별이 뜨지 않는다. HomeScene 이 false 로 덮는다. */
+  protected get isOutdoor(): boolean {
+    return true;
+  }
 
   init(data: { spawnX?: number }): void {
     this.spawnX = typeof data?.spawnX === 'number' ? data.spawnX : null;
@@ -102,6 +130,8 @@ export abstract class WorldScene extends Phaser.Scene {
     this.cameras.main.setBounds(0, 0, this.worldWidth, GAME_HEIGHT);
     this.cameras.main.startFollow(this.player, true, 0.14, 0.14);
     this.cameras.main.setDeadzone(220, GAME_HEIGHT);
+
+    this.buildDayNight();
 
     this.bindBridgeEvents();
     this.bindPointer();
@@ -155,6 +185,65 @@ export abstract class WorldScene extends Phaser.Scene {
         onRepeat: () => cloud.setX(-320),
       });
     }
+  }
+
+  /* -------------------------------- 밤낮 -------------------------------- */
+
+  /**
+   * 화면 전체를 덮는 하늘색 판과, 밤에만 보이는 별.
+   *
+   * 깊이 60 — 사람과 물건(≤41) 위, 안내 표시와 글씨(500 이상) 아래다.
+   * 밤이라고 "+3개!" 나 느낌표까지 어두워지면 뭘 했는지 안 보인다.
+   */
+  private buildDayNight(): void {
+    this.stars = [];
+    if (this.isOutdoor) {
+      // 별은 하늘에만 뿌린다. 화면에 붙어 있어야(scrollFactor 0) 걸어도 따라온다.
+      for (let i = 0; i < 26; i += 1) {
+        const star = this.add
+          .image(20 + Math.random() * (GAME_WIDTH - 40), 24 + Math.random() * 260, ASSETS.ui.star)
+          .setScrollFactor(0)
+          .setDepth(59)
+          .setAlpha(0)
+          .setScale(0.16 + Math.random() * 0.16);
+        // 반짝임. 별마다 주기를 달리해야 한꺼번에 깜빡이지 않는다.
+        this.tweens.add({
+          targets: star,
+          scale: star.scale * 1.5,
+          duration: 1100 + Math.random() * 1600,
+          yoyo: true,
+          repeat: -1,
+          delay: Math.random() * 1800,
+        });
+        this.stars.push(star);
+      }
+    }
+
+    this.skyOverlay = this.add
+      .rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x000000, 0)
+      .setOrigin(0)
+      .setScrollFactor(0)
+      .setDepth(60);
+
+    this.dayNightTimer = 0;
+    this.lastPhase = null;
+    this.applyDayNight();
+  }
+
+  private applyDayNight(): void {
+    const ms = cycleNow();
+    const tint = tintAt(ms);
+    this.skyOverlay?.setFillStyle(tint.color, tint.alpha);
+
+    const starAlpha = starAlphaAt(ms);
+    for (const star of this.stars) star.setAlpha(starAlpha);
+
+    // 시간대가 넘어갈 때만 한 번 알려 준다. 어두워진 이유를 모르면 고장으로 오해한다.
+    const phase = phaseAt(ms);
+    if (this.lastPhase !== null && this.lastPhase !== phase) {
+      this.toast(PHASE_CHANGE_TEXT[phase], 'info');
+    }
+    this.lastPhase = phase;
   }
 
   protected addGround(textureKey: string, tint?: number): void {
@@ -344,6 +433,13 @@ export abstract class WorldScene extends Phaser.Scene {
       layer.sprite.tilePositionX = scrollX * layer.factor;
     }
 
+    // 17분에 걸쳐 변하는 색이라 0.4초마다 칠해도 계단이 보이지 않는다.
+    this.dayNightTimer += delta;
+    if (this.dayNightTimer >= 400) {
+      this.dayNightTimer = 0;
+      this.applyDayNight();
+    }
+
     this.refreshInteractions();
   }
 
@@ -422,8 +518,7 @@ export abstract class WorldScene extends Phaser.Scene {
   protected askMath(
     context: MathContext,
     title: string,
-    /** @param wrongAttempts 맞히기까지 틀린 횟수 (한 번에 맞히면 0) */
-    onCorrect: (wrongAttempts: number) => void,
+    onCorrect: (result: MathAskResult) => void,
   ): void {
     const requestId = `req_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
     const off = gameEvents.on('math:result', (payload) => {
@@ -431,7 +526,10 @@ export abstract class WorldScene extends Phaser.Scene {
       off();
       if (!payload.correct) return;
       this.player.playHappy();
-      onCorrect(payload.wrongAttempts);
+      onCorrect({
+        wrongAttempts: payload.wrongAttempts,
+        failedQuestions: payload.failedQuestions,
+      });
     });
     this.disposers.push(off);
     this.player.playInteract();
@@ -449,13 +547,18 @@ export abstract class WorldScene extends Phaser.Scene {
 
   /**
    * 정답 보상으로 경험치를 준다. 레벨이 오르면 짧은 연출과 안내를 띄운다. (명세 32, 33)
+   *
+   * 두 번 틀려서 답을 보고 넘어간 문제가 있으면 주지 않는다. (요청 2)
+   * 행동 자체(수확·구입)는 그대로 되지만 경험치만 없다 — 빈손으로 돌려보내면
+   * 2학년에게는 벌처럼 느껴진다. 대신 수확량은 틀린 횟수만큼 줄어든다.
    */
-  protected awardExperience(context: MathContext): void {
-    const result = useGameStore.getState().gainExperience(context);
-    if (!result.leveledUp) return;
+  protected awardExperience(context: MathContext, result?: MathAskResult): void {
+    if (result && result.failedQuestions > 0) return;
+    const gain = useGameStore.getState().gainExperience(context);
+    if (!gain.leveledUp) return;
     audio.play('levelUp');
     burstStars(this, this.player.x, this.player.y - 170, 16);
-    gameEvents.emit('level:up', { level: result.newLevel });
+    gameEvents.emit('level:up', { level: gain.newLevel });
   }
 
   /* -------------------------------- 꾸미기 -------------------------------- */
